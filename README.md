@@ -26,6 +26,21 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 - Restauration depuis un fichier JSON
 - Remise à zéro de la collection
 
+## Améliorations futures
+
+### Utilité quotidienne
+- **Estimation de complétion** — calculer combien de paquets il reste statistiquement à ouvrir pour finir l'album (formule du problème du collectionneur)
+- **Saisie rapide par lot** — entrer une série de numéros d'un coup après avoir ouvert des paquets, plutôt que cliquer un par un
+- **PWA** — installer l'app sur l'écran d'accueil du téléphone comme une vraie app native
+
+### Échanges
+- **QR code / lien de partage** — encoder la liste de doubles dans une URL pour l'envoyer directement à quelqu'un
+- **Mode comparaison** — importer la collection d'un ami et voir automatiquement les échanges possibles dans les deux sens
+
+### Statistiques avancées
+- **Courbe de progression** — graphique montrant l'évolution de l'album dans le temps
+- **Alertes de complétion d'équipe** — badge ou notification quand une équipe atteint 100%
+
 ## Stack technique
 
 - [Next.js](https://nextjs.org) (App Router) + TypeScript
