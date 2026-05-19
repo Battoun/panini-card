@@ -11,6 +11,7 @@ interface Props {
   search: string;
   onSearchChange: (s: string) => void;
   onShare: () => void;
+  onQuickEntry: () => void;
 }
 
 const STATUS_OPTIONS: { value: FilterStatus; label: string }[] = [
@@ -20,7 +21,7 @@ const STATUS_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'doubles', label: 'Doubles' },
 ];
 
-export function FilterBar({ filter, onFilterChange, teamFilter, onTeamChange, search, onSearchChange, onShare }: Props) {
+export function FilterBar({ filter, onFilterChange, teamFilter, onTeamChange, search, onSearchChange, onShare, onQuickEntry }: Props) {
   return (
     <div className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center gap-2">
@@ -70,7 +71,13 @@ export function FilterBar({ filter, onFilterChange, teamFilter, onTeamChange, se
           className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 w-32 focus:outline-none focus:ring-2 focus:ring-blue-300"
         />
 
-        <div className="ml-auto">
+        <div className="ml-auto flex gap-2">
+          <button
+            onClick={onQuickEntry}
+            className="text-xs font-semibold bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+          >
+            ⚡ Saisie rapide
+          </button>
           <button
             onClick={onShare}
             className="text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg transition-colors"

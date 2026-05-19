@@ -10,6 +10,7 @@ import { TeamSection } from './TeamSection';
 import { StickerCard } from './StickerCard';
 import { SharePanel } from './SharePanel';
 import { StatsView } from './StatsView';
+import { QuickEntryPanel } from './QuickEntryPanel';
 
 type Tab = 'album' | 'stats';
 
@@ -20,6 +21,7 @@ export function AlbumView() {
   const [teamFilter, setTeamFilter] = useState('');
   const [search, setSearch] = useState('');
   const [showShare, setShowShare] = useState(false);
+  const [showQuickEntry, setShowQuickEntry] = useState(false);
 
   const specialStickers = useMemo(() => ALL_STICKERS.filter((s) => !s.teamId && !s.displayId.startsWith('CC')), []);
   const ccStickers      = useMemo(() => ALL_STICKERS.filter((s) => s.displayId.startsWith('CC')), []);
@@ -139,6 +141,7 @@ export function AlbumView() {
         search={search}
         onSearchChange={setSearch}
         onShare={() => setShowShare(true)}
+        onQuickEntry={() => setShowQuickEntry(true)}
       />}
 
       {tab === 'album' && <main className="max-w-7xl mx-auto px-4 py-4 flex-1">
@@ -249,6 +252,15 @@ export function AlbumView() {
           {TOTAL_BASE} vignettes standards + {TOTAL_CC} Coca-Cola · 48 équipes · 12 groupes · FIFA World Cup 2026
         </p>
       </main>}
+
+      {showQuickEntry && (
+        <QuickEntryPanel
+          copies={copies}
+          onIncrement={increment}
+          onAddPack={() => setPacks(packs + 1)}
+          onClose={() => setShowQuickEntry(false)}
+        />
+      )}
 
       {showShare && (
         <SharePanel

@@ -8,6 +8,7 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 - **992 vignettes** : 20 vignettes spéciales FWC, 960 vignettes équipes (48 équipes × 20), 12 vignettes exclusives Coca-Cola
 - **48 équipes** organisées par groupe (A à L) dans l'ordre de l'album
 - Incrémentation / décrémentation du nombre de copies par vignette
+- **Saisie rapide par lot** — tape plusieurs IDs d'un coup (`FRA3 BRA7 ARG12`) pour enregistrer tout un paquet en quelques secondes
 - **Filtres** : Toutes / Manquantes / Collées / Doubles
 - **Recherche** par nom de joueur, numéro ou équipe
 - **Filtre par équipe** avec menu déroulant groupé par poule
@@ -29,7 +30,6 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 ## Améliorations futures
 
 ### Utilité quotidienne
-- **Saisie rapide par lot** — entrer une série de numéros d'un coup après avoir ouvert des paquets, plutôt que cliquer un par un
 - **PWA** — installer l'app sur l'écran d'accueil du téléphone comme une vraie app native
 
 ### Échanges
