@@ -22,6 +22,9 @@ export function QuickEntryPanel({ copies, onIncrement, onAddPack, onClose }: Pro
   const [input, setInput] = useState('');
   const [applied, setApplied] = useState(false);
 
+  type ResultItem = { sticker: typeof ALL_STICKERS[0]; wasNew: boolean };
+  const [result, setResult] = useState<ResultItem[]>([]);
+
   const lookup = useMemo(() => {
     const map: Record<string, typeof ALL_STICKERS[0]> = {};
     for (const s of ALL_STICKERS) {
@@ -48,10 +51,19 @@ export function QuickEntryPanel({ copies, onIncrement, onAddPack, onClose }: Pro
   const invalidCount = parsed.filter((p) => !p.sticker).length;
 
   function handleApply() {
+    const snapshot: ResultItem[] = [];
+    const seenInBatch: Record<number, number> = {};
     for (const { sticker } of parsed) {
-      if (sticker) onIncrement(sticker.id);
+      if (sticker) {
+        const alreadyOwned = copies[sticker.id] ?? 0;
+        const seenSoFar    = seenInBatch[sticker.id] ?? 0;
+        snapshot.push({ sticker, wasNew: alreadyOwned === 0 && seenSoFar === 0 });
+        seenInBatch[sticker.id] = seenSoFar + 1;
+        onIncrement(sticker.id);
+      }
     }
     if (mode === 'sachet') onAddPack();
+    setResult(snapshot);
     setApplied(true);
   }
 
@@ -156,31 +168,69 @@ export function QuickEntryPanel({ copies, onIncrement, onAddPack, onClose }: Pro
                   </p>
                   <button
                     onClick={handleApply}
-                    disabled={validCount === 0}
+                    disabled={validCount === 0 || (mode === 'sachet' && validCount !== 7)}
                     className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-sm font-bold px-4 py-2 rounded-xl transition-colors"
                   >
-                    Ajouter ({validCount})
+                    {mode === 'sachet' && validCount !== 7
+                      ? `Ajouter (${validCount}/7)`
+                      : `Ajouter (${validCount})`}
                   </button>
                 </div>
               )}
             </>
           )}
 
-          {/* Étape 3 — confirmation */}
-          {applied && (
-            <div className="text-center py-6">
-              <p className="text-4xl mb-2">✅</p>
-              <p className="font-bold text-gray-800 text-lg">{validCount} vignette{validCount > 1 ? 's' : ''} ajoutée{validCount > 1 ? 's' : ''}</p>
-              {mode === 'sachet' && <p className="text-xs text-blue-500 mt-1">+1 sachet comptabilisé</p>}
-              <p className="text-xs text-gray-400 mt-1">Ta collection a été mise à jour</p>
-              <button
-                onClick={onClose}
-                className="mt-4 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold px-5 py-2 rounded-xl transition-colors"
-              >
-                Fermer
-              </button>
-            </div>
-          )}
+          {/* Étape 3 — récap */}
+          {applied && (() => {
+            const newCount    = result.filter((r) => r.wasNew).length;
+            const doubleCount = result.filter((r) => !r.wasNew).length;
+            return (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">✅</span>
+                  <span className="font-bold text-gray-800">
+                    {mode === 'sachet' ? 'Sachet ajouté' : 'Échange ajouté'}
+                  </span>
+                  {mode === 'sachet' && <span className="ml-auto text-[11px] text-blue-500 font-semibold">+1 sachet comptabilisé</span>}
+                </div>
+
+                <div className="flex gap-2">
+                  <div className="flex-1 bg-green-50 rounded-xl p-3 text-center">
+                    <p className="text-2xl font-black text-green-600">{newCount}</p>
+                    <p className="text-[10px] text-green-500 uppercase tracking-wide mt-0.5">Nouvelle{newCount > 1 ? 's' : ''}</p>
+                  </div>
+                  <div className="flex-1 bg-orange-50 rounded-xl p-3 text-center">
+                    <p className="text-2xl font-black text-orange-500">{doubleCount}</p>
+                    <p className="text-[10px] text-orange-400 uppercase tracking-wide mt-0.5">Double{doubleCount > 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-1 max-h-52 overflow-y-auto">
+                  {result.map(({ sticker, wasNew }, i) => {
+                    const team = sticker.teamId ? teamById[sticker.teamId] : null;
+                    return (
+                      <div key={i} className={`flex items-center gap-2 px-2 py-1.5 rounded-lg ${wasNew ? 'bg-green-50' : 'bg-orange-50'}`}>
+                        <span className={`text-xs font-bold ${wasNew ? 'text-green-500' : 'text-orange-400'}`}>{wasNew ? '★' : '+'}</span>
+                        {team && <span className="text-sm leading-none">{team.flag}</span>}
+                        <span className="font-mono text-xs font-bold text-gray-700 w-14 shrink-0">{sticker.displayId}</span>
+                        <span className="text-xs text-gray-500 truncate flex-1">{sticker.name}</span>
+                        <span className={`text-[10px] font-semibold shrink-0 ${wasNew ? 'text-green-600' : 'text-orange-500'}`}>
+                          {wasNew ? 'nouvelle' : 'double'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={onClose}
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2.5 rounded-xl transition-colors"
+                >
+                  Fermer
+                </button>
+              </div>
+            );
+          })()}
 
         </div>
       </div>
