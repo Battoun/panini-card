@@ -48,6 +48,7 @@ export function StatsView({ copies, packs, onPacksChange, spent, collected, tota
   const missing          = TOTAL_STICKERS - collected;
   const pctAlbum         = Math.round((collected / TOTAL_BASE) * 100);
 
+
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 flex-1 space-y-6">
 
@@ -107,6 +108,7 @@ export function StatsView({ copies, packs, onPacksChange, spent, collected, tota
         <p className="text-xs text-gray-400 mt-1.5">
           + {TOTAL_CC} vignettes Coca-Cola trackées séparément
         </p>
+
       </section>
 
       {/* ── Top 5 / Flop 5 ── */}

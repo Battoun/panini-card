@@ -29,11 +29,11 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 ## Améliorations futures
 
 ### Utilité quotidienne
-- **Estimation de complétion** — calculer combien de paquets il reste statistiquement à ouvrir pour finir l'album (formule du problème du collectionneur)
 - **Saisie rapide par lot** — entrer une série de numéros d'un coup après avoir ouvert des paquets, plutôt que cliquer un par un
 - **PWA** — installer l'app sur l'écran d'accueil du téléphone comme une vraie app native
 
 ### Échanges
+- **Liste des manquantes formatée** — générer un texte "il me manque : FRA 3, FRA 7, ARG 2…" prêt à copier-coller pour faciliter les demandes d'échanges
 - **QR code / lien de partage** — encoder la liste de doubles dans une URL pour l'envoyer directement à quelqu'un
 - **Mode comparaison** — importer la collection d'un ami et voir automatiquement les échanges possibles dans les deux sens
 - **Suivi des échanges** — enregistrer chaque échange réalisé : avec qui, quelles vignettes données, quelles vignettes reçues en retour. Les vignettes données sont automatiquement retirées des doubles disponibles. Un historique permet de retrouver tous les échanges passés avec leur date, et des stats globales indiquent combien de vignettes ont été données et reçues au total via les échanges.
