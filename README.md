@@ -9,6 +9,7 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 - **48 équipes** organisées par groupe (A à L) dans l'ordre de l'album
 - Incrémentation / décrémentation du nombre de copies par vignette
 - **Saisie rapide par lot** — tape plusieurs IDs d'un coup (`FRA3 BRA7 ARG12`) pour enregistrer tout un paquet en quelques secondes
+- **Échange complet** — dans la saisie rapide, saisir les vignettes reçues (ajoutées) et les vignettes données (retirées), avec avertissement si tu donnes une vignette dont tu n'as pas de double
 - **Filtres** : Toutes / Manquantes / Collées / Doubles
 - **Recherche** par nom de joueur, numéro ou équipe
 - **Filtre par équipe** avec menu déroulant groupé par poule
@@ -33,7 +34,6 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 - **PWA** — installer l'app sur l'écran d'accueil du téléphone comme une vraie app native
 
 ### Échanges
-- **Échange complet dans la saisie rapide** — lors d'un échange, pouvoir saisir à la fois la vignette reçue (ajoutée à la collection) et la vignette donnée (retirée de la collection), pour que les doubles soient toujours à jour après un échange
 - **Liste des manquantes formatée** — générer un texte "il me manque : FRA 3, FRA 7, ARG 2…" prêt à copier-coller pour faciliter les demandes d'échanges
 - **QR code / lien de partage** — encoder la liste de doubles dans une URL pour l'envoyer directement à quelqu'un
 - **Mode comparaison** — importer le fichier JSON d'un ami (exporté depuis l'app) et comparer automatiquement les deux collections : afficher les vignettes que tu as en double et qu'il lui manque, et inversement celles qu'il a en double et qu'il te manquent. Résultat : une liste d'échanges possibles dans les deux sens, prête à partager.
