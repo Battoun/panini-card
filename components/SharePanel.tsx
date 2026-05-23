@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { ALL_STICKERS, STICKERS_BY_ID, TEAMS } from '../data/album';
+import { ALL_STICKERS, STICKERS_BY_ID, TEAMS, STICKERS_BY_TEAM, GROUPS } from '../data/album';
 
 interface Props {
   copies: Record<number, number>;
@@ -12,10 +12,11 @@ interface Props {
 }
 
 export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Props) {
-  const [tab, setTab] = useState<'export' | 'import' | 'list'>('list');
+  const [tab, setTab] = useState<'list' | 'missing' | 'export' | 'import'>('list');
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied]         = useState(false);
+  const [copiedMissing, setCopiedMissing] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const doublesList = ALL_STICKERS
@@ -29,6 +30,46 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
   const doublesText = doublesList.length > 0
     ? `Mes doubles – FIFA World Cup 2026 Panini\n${new Date().toLocaleDateString('fr-FR')}\n\n` + doublesList.join('\n')
     : 'Aucun double pour le moment.';
+
+  // Liste des manquantes groupée par équipe
+  const missingText = (() => {
+    const lines: string[] = [`Il me manque – FIFA World Cup 2026 Panini`, new Date().toLocaleDateString('fr-FR'), ''];
+
+    // Spéciales FWC
+    const missingFWC = ALL_STICKERS
+      .filter((s) => !s.teamId && !s.displayId.startsWith('CC') && (copies[s.id] ?? 0) === 0)
+      .map((s) => s.displayId);
+    if (missingFWC.length > 0) lines.push(`✨ Spéciales : ${missingFWC.join(', ')}`);
+
+    // Équipes par groupe
+    for (const g of GROUPS) {
+      const teamsInGroup = TEAMS.filter((t) => t.group === g);
+      for (const team of teamsInGroup) {
+        const missing = (STICKERS_BY_TEAM[team.id] ?? [])
+          .filter((s) => (copies[s.id] ?? 0) === 0)
+          .map((s) => s.displayId);
+        if (missing.length > 0) lines.push(`${team.flag} ${team.name} : ${missing.join(', ')}`);
+      }
+    }
+
+    // Coca-Cola
+    const missingCC = ALL_STICKERS
+      .filter((s) => s.displayId.startsWith('CC') && (copies[s.id] ?? 0) === 0)
+      .map((s) => s.displayId);
+    if (missingCC.length > 0) lines.push(`🥤 Coca-Cola : ${missingCC.join(', ')}`);
+
+    const totalMissing = ALL_STICKERS.filter((s) => (copies[s.id] ?? 0) === 0).length;
+    lines.push('', `Total : ${totalMissing} vignette${totalMissing > 1 ? 's' : ''} manquante${totalMissing > 1 ? 's' : ''}`);
+    return lines.join('\n');
+  })();
+
+  const totalMissing = ALL_STICKERS.filter((s) => (copies[s.id] ?? 0) === 0).length;
+
+  const handleCopyMissing = async () => {
+    await navigator.clipboard.writeText(missingText);
+    setCopiedMissing(true);
+    setTimeout(() => setCopiedMissing(false), 2000);
+  };
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(doublesText);
@@ -79,7 +120,7 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
 
         {/* Tabs */}
         <div className="flex border-b px-4">
-          {(['list', 'export', 'import'] as const).map((t) => (
+          {(['list', 'missing', 'export', 'import'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -88,7 +129,7 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
                 tab === t ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700',
               ].join(' ')}
             >
-              {t === 'list' ? 'Liste doubles' : t === 'export' ? 'Sauvegarder' : 'Restaurer'}
+              {t === 'list' ? 'Doubles' : t === 'missing' ? 'Manquantes' : t === 'export' ? 'Sauvegarder' : 'Restaurer'}
             </button>
           ))}
         </div>
@@ -111,6 +152,28 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
                 className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
               >
                 {copied ? 'Copié !' : 'Copier dans le presse-papier'}
+              </button>
+            </div>
+          )}
+
+          {tab === 'missing' && (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600">
+                {totalMissing > 0
+                  ? `${totalMissing} vignette${totalMissing > 1 ? 's' : ''} manquante${totalMissing > 1 ? 's' : ''}, groupées par équipe :`
+                  : 'Album complet, aucune vignette manquante !'}
+              </p>
+              <textarea
+                readOnly
+                value={missingText}
+                className="w-full h-48 text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg p-2 resize-none"
+              />
+              <button
+                onClick={handleCopyMissing}
+                disabled={totalMissing === 0}
+                className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-sm font-semibold transition-colors"
+              >
+                {copiedMissing ? 'Copié !' : 'Copier dans le presse-papier'}
               </button>
             </div>
           )}
