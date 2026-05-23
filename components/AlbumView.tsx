@@ -257,6 +257,7 @@ export function AlbumView() {
         <QuickEntryPanel
           copies={copies}
           onIncrement={increment}
+          onDecrement={decrement}
           onAddPack={() => setPacks(packs + 1)}
           onClose={() => setShowQuickEntry(false)}
         />
