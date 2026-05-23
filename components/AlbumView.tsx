@@ -117,7 +117,7 @@ export function AlbumView() {
       <StatsBar collected={stats.collected} doubles={stats.doubles} totalDoubles={stats.totalDoubles} />
 
       {/* Onglets navigation */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4 flex gap-0">
           {([['album', 'Mon Album'], ['stats', 'Statistiques']] as [Tab, string][]).map(([t, label]) => (
             <button
@@ -127,7 +127,7 @@ export function AlbumView() {
                 'px-5 py-3 text-sm font-semibold border-b-2 transition-colors',
                 tab === t
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700',
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
               ].join(' ')}
             >
               {label}
@@ -164,8 +164,8 @@ export function AlbumView() {
           <section className="mb-8">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-2xl">✨</span>
-              <h2 className="font-bold text-gray-800 text-sm">Vignettes spéciales</h2>
-              <span className="text-xs text-gray-400 font-mono">N°1–20</span>
+              <h2 className="font-bold text-gray-800 dark:text-gray-100 text-sm">Vignettes spéciales</h2>
+              <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">N°1–20</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {filteredSpecial.map((s) => (
@@ -207,8 +207,8 @@ export function AlbumView() {
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm">
                   {g}
                 </div>
-                <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wide">Groupe {g}</h3>
-                <div className="flex-1 h-px bg-gray-200" />
+                <h3 className="font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wide">Groupe {g}</h3>
+                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
               </div>
 
               {teamsInGroup.map((team) => (
@@ -240,12 +240,12 @@ export function AlbumView() {
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-600 text-white font-bold text-xs">
                 CC
               </div>
-              <h3 className="font-bold text-gray-700 text-sm uppercase tracking-wide">
+              <h3 className="font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wide">
                 Coca-Cola – Vignettes exclusives
               </h3>
-              <div className="flex-1 h-px bg-gray-200" />
+              <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
             </div>
-            <p className="text-xs text-gray-400 mb-2 ml-11">
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 ml-11">
               12 vignettes exclusives trouvées sur les étiquettes de bouteilles Coca-Cola (hors packs)
             </p>
             <div className="flex flex-wrap gap-1.5 ml-0">
@@ -262,7 +262,7 @@ export function AlbumView() {
           </section>
         )}
 
-        <p className="text-center text-xs text-gray-300 mt-8 mb-4">
+        <p className="text-center text-xs text-gray-300 dark:text-gray-600 mt-8 mb-4">
           {TOTAL_BASE} vignettes standards + {TOTAL_CC} Coca-Cola · 48 équipes · 12 groupes · FIFA World Cup 2026
         </p>
       </main>}

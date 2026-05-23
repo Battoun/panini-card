@@ -15,9 +15,7 @@ export const StickerCard = memo(function StickerCard({ sticker, copies, onIncrem
   const doubles   = Math.max(0, copies - 1);
   const isSpecial = sticker.type === 'badge' || sticker.foil;
 
-  // displayId : ex "FRA 13", "FWC3", "CC2"
-  // On sépare le préfixe du numéro pour l'affichage
-  const parts    = sticker.displayId.split(' ');
+  const parts     = sticker.displayId.split(' ');
   const codeLabel = parts.length === 2 ? parts[0] : null;
   const numLabel  = parts.length === 2 ? parts[1] : sticker.displayId;
 
@@ -28,15 +26,14 @@ export const StickerCard = memo(function StickerCard({ sticker, copies, onIncrem
         'w-16 h-[88px] p-1 gap-0.5',
         collected
           ? doubles > 0
-            ? 'bg-orange-50 border-orange-400 shadow-sm shadow-orange-200'
-            : 'bg-green-50 border-green-400 shadow-sm shadow-green-200'
-          : 'bg-gray-50 border-gray-200 opacity-60',
+            ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-400 shadow-sm shadow-orange-200 dark:shadow-none'
+            : 'bg-green-50 dark:bg-green-900/20 border-green-400 shadow-sm shadow-green-200 dark:shadow-none'
+          : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-600 opacity-60',
       ].join(' ')}
     >
-      {/* Code équipe + numéro */}
       <div className="flex flex-col items-center leading-none mt-0.5">
         {codeLabel && (
-          <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wide leading-none">
+          <span className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide leading-none">
             {codeLabel}
           </span>
         )}
@@ -44,10 +41,10 @@ export const StickerCard = memo(function StickerCard({ sticker, copies, onIncrem
           className={[
             'text-sm font-black leading-none',
             isSpecial
-              ? 'text-yellow-600'
+              ? 'text-yellow-600 dark:text-yellow-400'
               : collected
-                ? doubles > 0 ? 'text-orange-600' : 'text-green-700'
-                : 'text-gray-400',
+                ? doubles > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-green-700 dark:text-green-400'
+                : 'text-gray-400 dark:text-gray-500',
           ].join(' ')}
         >
           {numLabel}
@@ -55,40 +52,33 @@ export const StickerCard = memo(function StickerCard({ sticker, copies, onIncrem
         </span>
       </div>
 
-      {/* Nom court */}
-      <span className="text-[8px] leading-tight text-gray-500 line-clamp-2 w-full px-0.5 text-center">
+      <span className="text-[8px] leading-tight text-gray-500 dark:text-gray-400 line-clamp-2 w-full px-0.5 text-center">
         {shortName(sticker)}
       </span>
 
-      {/* Contrôles +/− */}
       <div className="flex items-center gap-0.5 mt-auto">
         <button
           onClick={() => onDecrement(sticker.id)}
-          className="w-5 h-5 rounded text-xs font-bold flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors"
+          className="w-5 h-5 rounded text-xs font-bold flex items-center justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition-colors"
           aria-label="Retirer"
-        >
-          −
-        </button>
+        >−</button>
         <span
           className={[
             'w-5 h-5 rounded text-xs font-bold flex items-center justify-center',
             collected
               ? doubles > 0 ? 'bg-orange-500 text-white' : 'bg-green-500 text-white'
-              : 'bg-gray-200 text-gray-400',
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500',
           ].join(' ')}
         >
           {copies === 0 ? '–' : copies}
         </span>
         <button
           onClick={() => onIncrement(sticker.id)}
-          className="w-5 h-5 rounded text-xs font-bold flex items-center justify-center bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors"
+          className="w-5 h-5 rounded text-xs font-bold flex items-center justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition-colors"
           aria-label="Ajouter"
-        >
-          +
-        </button>
+        >+</button>
       </div>
 
-      {/* Badge doubles */}
       {doubles > 0 && (
         <span className="absolute -top-1.5 -right-1.5 bg-orange-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
           +{doubles}
@@ -105,7 +95,6 @@ function shortName(sticker: Sticker): string {
     const match = sticker.name.match(/Joueur (\d+)/);
     return match ? `Joueur ${match[1]}` : sticker.name;
   }
-  // special / FWC / CC
   const parts = sticker.name.split('–');
   return parts[parts.length - 1].trim();
 }

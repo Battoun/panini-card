@@ -135,21 +135,21 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h2 className="font-bold text-gray-800">Exporter / Partager</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="font-bold text-gray-800 dark:text-gray-100">Exporter / Partager</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none">×</button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b px-4 overflow-x-auto">
+        <div className="flex border-b border-gray-200 dark:border-gray-700 px-4 overflow-x-auto">
           {(['list', 'missing', 'share', 'export', 'import'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={[
                 'py-2 px-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
-                tab === t ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700',
+                tab === t ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
               ].join(' ')}
             >
               {t === 'list' ? 'Doubles' : t === 'missing' ? 'Manquantes' : t === 'share' ? 'Lien / QR' : t === 'export' ? 'Sauvegarder' : 'Restaurer'}
@@ -160,7 +160,7 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
         <div className="flex-1 overflow-auto p-4">
           {tab === 'list' && (
             <div className="space-y-3">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 {doublesList.length > 0
                   ? `${doublesList.length} vignette(s) en double à échanger :`
                   : 'Aucun double pour le moment.'}
@@ -168,7 +168,7 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
               <textarea
                 readOnly
                 value={doublesText}
-                className="w-full h-48 text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg p-2 resize-none"
+                className="w-full h-48 text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg p-2 resize-none"
               />
               <button
                 onClick={handleCopy}
@@ -181,7 +181,7 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
 
           {tab === 'missing' && (
             <div className="space-y-3">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 {totalMissing > 0
                   ? `${totalMissing} vignette${totalMissing > 1 ? 's' : ''} manquante${totalMissing > 1 ? 's' : ''}, groupées par équipe :`
                   : 'Album complet, aucune vignette manquante !'}
@@ -189,7 +189,7 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
               <textarea
                 readOnly
                 value={missingText}
-                className="w-full h-48 text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg p-2 resize-none"
+                className="w-full h-48 text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg p-2 resize-none"
               />
               <button
                 onClick={handleCopyMissing}
@@ -204,10 +204,10 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
           {tab === 'share' && (
             <div className="space-y-4">
               {doublesCount === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-8">Aucun double à partager pour le moment.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">Aucun double à partager pour le moment.</p>
               ) : (
                 <>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
                     Partage ce lien ou ce QR code — la personne verra directement ta liste de <span className="font-semibold">{doublesCount} doubles</span> disponibles.
                   </p>
 
@@ -219,8 +219,8 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
                     <div className="flex justify-center items-center h-[220px] text-gray-300 text-sm">Génération…</div>
                   )}
 
-                  <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2 border border-gray-200">
-                    <span className="text-xs text-gray-500 truncate flex-1 font-mono">{shareUrl}</span>
+                  <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-900 rounded-xl px-3 py-2 border border-gray-200 dark:border-gray-600">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1 font-mono">{shareUrl}</span>
                   </div>
 
                   <button
@@ -236,7 +236,7 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
 
           {tab === 'export' && (
             <div className="space-y-3">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 Sauvegardez votre collection complète dans un fichier JSON pour la restaurer plus tard ou l'utiliser sur un autre appareil.
               </p>
               <button
@@ -245,8 +245,8 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
               >
                 Télécharger le fichier JSON
               </button>
-              <hr />
-              <p className="text-xs text-gray-500">Zone de danger</p>
+              <hr className="border-gray-200 dark:border-gray-700" />
+              <p className="text-xs text-gray-500 dark:text-gray-400">Zone de danger</p>
               <button
                 onClick={() => {
                   if (window.confirm('Remettre à zéro toute la collection ?')) {
@@ -254,7 +254,7 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
                     onClose();
                   }
                 }}
-                className="w-full py-2 rounded-lg bg-red-100 hover:bg-red-200 text-red-700 text-sm font-semibold transition-colors"
+                className="w-full py-2 rounded-lg bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 text-sm font-semibold transition-colors"
               >
                 Réinitialiser la collection
               </button>
@@ -263,13 +263,13 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
 
           {tab === 'import' && (
             <div className="space-y-3">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-300">
                 Restaurez une collection précédemment exportée. Cette action remplacera toutes les données actuelles.
               </p>
               <input type="file" accept=".json" ref={fileRef} onChange={handleImportFile} className="hidden" />
               <button
                 onClick={() => fileRef.current?.click()}
-                className="w-full py-2 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-400 text-gray-600 text-sm font-medium transition-colors"
+                className="w-full py-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-blue-400 text-gray-600 dark:text-gray-300 text-sm font-medium transition-colors"
               >
                 Choisir un fichier JSON...
               </button>
@@ -277,7 +277,7 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
                 value={importText}
                 onChange={(e) => setImportText(e.target.value)}
                 placeholder="Ou collez le JSON ici..."
-                className="w-full h-32 text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
+                className="w-full h-32 text-xs font-mono bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-300"
               />
               {importError && <p className="text-xs text-red-600">{importError}</p>}
               <button

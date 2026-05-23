@@ -43,21 +43,21 @@ export function SharedDoublesPanel({ sharedDoubles, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b sticky top-0 bg-white">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b sticky top-0 bg-white dark:bg-gray-800">
           <div>
-            <h2 className="font-bold text-gray-800">Doubles partagés</h2>
-            <p className="text-xs text-gray-400">{total} vignette{total > 1 ? 's' : ''} disponible{total > 1 ? 's' : ''} à l'échange</p>
+            <h2 className="font-bold text-gray-800 dark:text-gray-100">Doubles partagés</h2>
+            <p className="text-xs text-gray-400 dark:text-gray-500">{total} vignette{total > 1 ? 's' : ''} disponible{total > 1 ? 's' : ''} à l'échange</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">×</button>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-xl leading-none">×</button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {sections.length === 0 ? (
-            <p className="text-center text-gray-400 text-sm py-8">Aucun double dans ce lien.</p>
+            <p className="text-center text-gray-400 dark:text-gray-500 text-sm py-8">Aucun double dans ce lien.</p>
           ) : sections.map(({ label, flag, items }) => (
             <div key={label}>
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">
+              <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
                 {flag && <span className="mr-1">{flag}</span>}{label}
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -65,9 +65,9 @@ export function SharedDoublesPanel({ sharedDoubles, onClose }: Props) {
                   <div
                     key={displayId}
                     title={name}
-                    className="flex items-center gap-1 bg-orange-50 border border-orange-200 rounded-lg px-2 py-1"
+                    className="flex items-center gap-1 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg px-2 py-1"
                   >
-                    <span className="text-xs font-bold text-gray-700">{displayId}</span>
+                    <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{displayId}</span>
                     {count > 1 && (
                       <span className="bg-orange-500 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
                         ×{count}
@@ -80,10 +80,10 @@ export function SharedDoublesPanel({ sharedDoubles, onClose }: Props) {
           ))}
         </div>
 
-        <div className="p-4 border-t">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={onClose}
-            className="w-full py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold transition-colors"
+            className="w-full py-2 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold transition-colors"
           >
             Fermer
           </button>

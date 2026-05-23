@@ -100,7 +100,7 @@ export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, o
 
   function StickerRow({ sticker, wasNew, given = false }: { sticker: typeof ALL_STICKERS[0]; wasNew: boolean; given?: boolean }) {
     const team = sticker.teamId ? teamById[sticker.teamId] : null;
-    const bg   = given ? 'bg-gray-50' : wasNew ? 'bg-green-50' : 'bg-orange-50';
+    const bg   = given ? 'bg-gray-50 dark:bg-gray-700/50' : wasNew ? 'bg-green-50 dark:bg-green-900/20' : 'bg-orange-50 dark:bg-orange-900/20';
     const icon = given ? '↑' : wasNew ? '★' : '+';
     const iconColor = given ? 'text-gray-400' : wasNew ? 'text-green-500' : 'text-orange-400';
     const label = given ? 'donnée' : wasNew ? 'nouvelle' : 'double';
@@ -109,8 +109,8 @@ export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, o
       <div className={`flex items-center gap-2 px-2 py-1.5 rounded-lg ${bg}`}>
         <span className={`text-xs font-bold ${iconColor}`}>{icon}</span>
         {team && <span className="text-sm leading-none">{team.flag}</span>}
-        <span className="font-mono text-xs font-bold text-gray-700 w-14 shrink-0">{sticker.displayId}</span>
-        <span className="text-xs text-gray-500 truncate flex-1">{sticker.name}</span>
+        <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-200 w-14 shrink-0">{sticker.displayId}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">{sticker.name}</span>
         <span className={`text-[10px] font-semibold shrink-0 ${labelColor}`}>{label}</span>
       </div>
     );
@@ -121,7 +121,7 @@ export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, o
       <div className="space-y-1 max-h-36 overflow-y-auto">
         {tokens.map(({ raw, sticker }, i) =>
           !sticker ? (
-            <div key={i} className="flex items-center gap-2 px-2 py-1 bg-red-50 rounded-lg">
+            <div key={i} className="flex items-center gap-2 px-2 py-1 bg-red-50 dark:bg-red-900/20 rounded-lg">
               <span className="text-red-500 text-xs font-bold">✗</span>
               <span className="font-mono text-xs text-red-600">{raw}</span>
               <span className="text-xs text-red-400">non reconnu</span>
@@ -141,11 +141,11 @@ export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, o
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
 
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 sticky top-0 bg-white z-10">
-          <h2 className="font-bold text-gray-800">Saisie rapide par lot</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
+          <h2 className="font-bold text-gray-800 dark:text-gray-100">Saisie rapide par lot</h2>
+          <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 text-2xl leading-none">×</button>
         </div>
 
         <div className="p-4 space-y-4">
@@ -157,19 +157,19 @@ export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, o
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setMode('sachet')}
-                  className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all"
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-blue-200 dark:border-blue-800 hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
                 >
                   <span className="text-3xl">🛍️</span>
-                  <span className="font-bold text-gray-800 text-sm">Un sachet</span>
-                  <span className="text-[11px] text-gray-400 text-center">7 vignettes · compte dans tes paquets ouverts</span>
+                  <span className="font-bold text-gray-800 dark:text-gray-100 text-sm">Un sachet</span>
+                  <span className="text-[11px] text-gray-400 dark:text-gray-500 text-center">7 vignettes · compte dans tes paquets ouverts</span>
                 </button>
                 <button
                   onClick={() => setMode('echange')}
-                  className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-green-200 hover:border-green-400 hover:bg-green-50 transition-all"
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 border-green-200 dark:border-green-800 hover:border-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all"
                 >
                   <span className="text-3xl">🔁</span>
-                  <span className="font-bold text-gray-800 text-sm">Un échange</span>
-                  <span className="text-[11px] text-gray-400 text-center">Saisir ce que tu reçois et ce que tu donnes</span>
+                  <span className="font-bold text-gray-800 dark:text-gray-100 text-sm">Un échange</span>
+                  <span className="text-[11px] text-gray-400 dark:text-gray-500 text-center">Saisir ce que tu reçois et ce que tu donnes</span>
                 </button>
               </div>
             </div>
@@ -219,7 +219,7 @@ export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, o
                     value={inputGiven}
                     onChange={(e) => setInputGiven(e.target.value)}
                     placeholder="ARG5"
-                    className="w-full border border-gray-200 rounded-xl p-3 text-sm font-mono focus:outline-none focus:border-gray-400 resize-none"
+                    className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 rounded-xl p-3 text-sm font-mono focus:outline-none focus:border-gray-400 resize-none"
                     rows={2}
                   />
                   {parsedGiven.length > 0 && <ParsedPreview tokens={parsedGiven} isGiven />}
@@ -262,7 +262,7 @@ export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, o
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <span className="text-xl">✅</span>
-                  <span className="font-bold text-gray-800">
+                  <span className="font-bold text-gray-800 dark:text-gray-100">
                     {mode === 'sachet' ? 'Sachet ajouté' : 'Échange enregistré'}
                   </span>
                   {mode === 'sachet' && <span className="ml-auto text-[11px] text-blue-500 font-semibold">+1 sachet</span>}
@@ -304,7 +304,7 @@ export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, o
 
                 <button
                   onClick={onClose}
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold py-2.5 rounded-xl transition-colors"
+                  className="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold py-2.5 rounded-xl transition-colors"
                 >
                   Fermer
                 </button>
