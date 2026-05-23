@@ -78,7 +78,7 @@ export function StatsView({ copies, packs, onPacksChange, spent, collected, tota
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <StatCard label="Dépensé"           value={`${spent.toFixed(2)} €`}  color="text-red-600"   bg="bg-red-50"   />
-          <StatCard label="Vignettes reçues"  value={String(stickersReceived)} color="text-blue-700"  bg="bg-blue-50"  />
+          <StatCard label="Reçues (sachets)"  value={String(stickersReceived)} color="text-blue-700"  bg="bg-blue-50"  />
           <StatCard label="Vignettes collées" value={String(collected)}        color="text-green-700" bg="bg-green-50" />
           <StatCard label="Doubles en main"   value={String(totalDoubles)}     color="text-orange-600" bg="bg-orange-50" />
         </div>
