@@ -27,4 +27,6 @@ export interface CollectionData {
   copies: Record<number, number>;
   packs: number;
   lastUpdated: string;
+  exchangeGiven?: number;
+  exchangeReceived?: number;
 }

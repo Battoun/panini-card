@@ -12,9 +12,13 @@ interface Props {
   spent: number;
   collected: number;
   totalDoubles: number;
+  exchangeGiven: number;
+  exchangeReceived: number;
+  onExchangeGivenChange: (n: number) => void;
+  onExchangeReceivedChange: (n: number) => void;
 }
 
-export function StatsView({ copies, packs, onPacksChange, spent, collected, totalDoubles }: Props) {
+export function StatsView({ copies, packs, onPacksChange, spent, collected, totalDoubles, exchangeGiven, exchangeReceived, onExchangeGivenChange, onExchangeReceivedChange }: Props) {
 
   const teamStats = useMemo(() =>
     TEAMS.map((team) => {
@@ -90,6 +94,43 @@ export function StatsView({ copies, packs, onPacksChange, spent, collected, tota
             &nbsp;·&nbsp; Vignettes manquantes : <span className="font-semibold text-gray-600 dark:text-gray-300">{missing}</span>
           </p>
         )}
+      </section>
+
+      {/* ── Échanges ── */}
+      <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+        <h2 className="font-bold text-gray-800 dark:text-gray-100 mb-4 text-base">Échanges effectués</h2>
+        <div className="grid grid-cols-2 gap-4">
+          {/* Données */}
+          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 text-center">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Cartes données</p>
+            <div className="flex items-center justify-center gap-2">
+              <button onClick={() => onExchangeGivenChange(exchangeGiven - 1)} disabled={exchangeGiven <= 0}
+                className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-30 font-bold text-gray-700 dark:text-gray-200 flex items-center justify-center transition-colors">−</button>
+              <input
+                type="number" min={0} value={exchangeGiven}
+                onChange={(e) => onExchangeGivenChange(Number(e.target.value))}
+                className="w-16 text-center text-2xl font-black text-gray-700 dark:text-gray-100 bg-transparent focus:outline-none"
+              />
+              <button onClick={() => onExchangeGivenChange(exchangeGiven + 1)}
+                className="w-7 h-7 rounded-lg bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 font-bold text-gray-700 dark:text-gray-200 flex items-center justify-center transition-colors">+</button>
+            </div>
+          </div>
+          {/* Reçues */}
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-3 text-center">
+            <p className="text-[10px] text-green-600 dark:text-green-400 uppercase tracking-wide mb-2">Cartes reçues</p>
+            <div className="flex items-center justify-center gap-2">
+              <button onClick={() => onExchangeReceivedChange(exchangeReceived - 1)} disabled={exchangeReceived <= 0}
+                className="w-7 h-7 rounded-lg bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-900/60 disabled:opacity-30 font-bold text-green-700 dark:text-green-300 flex items-center justify-center transition-colors">−</button>
+              <input
+                type="number" min={0} value={exchangeReceived}
+                onChange={(e) => onExchangeReceivedChange(Number(e.target.value))}
+                className="w-16 text-center text-2xl font-black text-green-700 dark:text-green-400 bg-transparent focus:outline-none"
+              />
+              <button onClick={() => onExchangeReceivedChange(exchangeReceived + 1)}
+                className="w-7 h-7 rounded-lg bg-green-100 dark:bg-green-900/40 hover:bg-green-200 dark:hover:bg-green-900/60 font-bold text-green-700 dark:text-green-300 flex items-center justify-center transition-colors">+</button>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* ── Progression album ── */}

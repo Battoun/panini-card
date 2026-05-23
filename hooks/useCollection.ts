@@ -75,6 +75,35 @@ export function useCollection() {
     });
   }, []);
 
+  const addExchange = useCallback((given: number, received: number) => {
+    setData((prev) => {
+      const next: CollectionData = {
+        ...prev,
+        exchangeGiven:   (prev.exchangeGiven   ?? 0) + given,
+        exchangeReceived: (prev.exchangeReceived ?? 0) + received,
+        lastUpdated: new Date().toISOString(),
+      };
+      saveToStorage(next);
+      return next;
+    });
+  }, []);
+
+  const setExchangeGiven = useCallback((n: number) => {
+    setData((prev) => {
+      const next: CollectionData = { ...prev, exchangeGiven: Math.max(0, n), lastUpdated: new Date().toISOString() };
+      saveToStorage(next);
+      return next;
+    });
+  }, []);
+
+  const setExchangeReceived = useCallback((n: number) => {
+    setData((prev) => {
+      const next: CollectionData = { ...prev, exchangeReceived: Math.max(0, n), lastUpdated: new Date().toISOString() };
+      saveToStorage(next);
+      return next;
+    });
+  }, []);
+
   const setPacks = useCallback((count: number) => {
     setData((prev) => {
       const next: CollectionData = {
@@ -137,11 +166,16 @@ export function useCollection() {
     increment,
     decrement,
     setPacks,
+    addExchange,
+    setExchangeGiven,
+    setExchangeReceived,
     importData,
     exportData,
     resetAll,
     stats,
     copies: data.copies,
     packs:  data.packs,
+    exchangeGiven:    data.exchangeGiven    ?? 0,
+    exchangeReceived: data.exchangeReceived ?? 0,
   };
 }

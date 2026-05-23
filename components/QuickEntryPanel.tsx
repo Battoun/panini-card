@@ -17,10 +17,11 @@ interface Props {
   onIncrement: (id: number) => void;
   onDecrement: (id: number) => void;
   onAddPack: () => void;
+  onExchange: (given: number, received: number) => void;
   onClose: () => void;
 }
 
-export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, onClose }: Props) {
+export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, onExchange, onClose }: Props) {
   const [mode, setMode]           = useState<Mode | null>(null);
   const [inputRec, setInputRec]   = useState('');
   const [inputGiven, setInputGiven] = useState('');
@@ -93,6 +94,7 @@ export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, o
     }
 
     if (mode === 'sachet') onAddPack();
+    if (mode === 'echange') onExchange(snapshotGiven.length, snapshotRec.length);
     setResultRec(snapshotRec);
     setResultGiven(snapshotGiven);
     setApplied(true);

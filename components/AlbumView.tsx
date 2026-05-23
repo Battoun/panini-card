@@ -18,7 +18,7 @@ import { decodeDoubles } from '../utils/share';
 type Tab = 'album' | 'stats';
 
 export function AlbumView() {
-  const { copies, hydrated, increment, decrement, setPacks, packs, importData, exportData, resetAll, stats } = useCollection();
+  const { copies, hydrated, increment, decrement, setPacks, packs, importData, exportData, resetAll, stats, addExchange, setExchangeGiven, setExchangeReceived, exchangeGiven, exchangeReceived } = useCollection();
   const [tab, setTab] = useState<Tab>('album');
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [teamFilter, setTeamFilter] = useState('');
@@ -161,6 +161,10 @@ export function AlbumView() {
           spent={stats.spent}
           collected={stats.collected}
           totalDoubles={stats.totalDoubles}
+          exchangeGiven={exchangeGiven}
+          exchangeReceived={exchangeReceived}
+          onExchangeGivenChange={setExchangeGiven}
+          onExchangeReceivedChange={setExchangeReceived}
         />
       )}
 
@@ -299,6 +303,7 @@ export function AlbumView() {
           onIncrement={handleIncrement}
           onDecrement={decrement}
           onAddPack={() => setPacks(packs + 1)}
+          onExchange={addExchange}
           onClose={() => setShowQuickEntry(false)}
         />
       )}
