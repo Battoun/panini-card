@@ -20,3 +20,12 @@ html, body {
   display: flex;
   flex-direction: column;
 }
+
+@keyframes toast-slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.toast-enter {
+  animation: toast-slide-up 0.25s ease-out;
+}

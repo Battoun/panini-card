@@ -40,6 +40,11 @@ export const TeamSection = memo(function TeamSection({ team, stickers, copies, f
         <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">Gr. {team.group}</span>
         <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">{team.confederation}</span>
         <div className="flex items-center gap-1 ml-auto">
+          {pct === 100 && (
+            <span className="text-[11px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold px-1.5 py-0.5 rounded-full">
+              ✓ Complète
+            </span>
+          )}
           {teamDoubles > 0 && (
             <span className="text-[11px] bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 font-semibold px-1.5 py-0.5 rounded-full">
               {teamDoubles} doubles

@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
-import { ALL_STICKERS, TEAMS, STICKERS_BY_TEAM, TOTAL_STICKERS, TOTAL_BASE, TOTAL_CC, GROUPS } from '../data/album';
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import { ALL_STICKERS, TEAMS, STICKERS_BY_TEAM, STICKERS_BY_ID, TOTAL_STICKERS, TOTAL_BASE, TOTAL_CC, GROUPS } from '../data/album';
 import { FilterStatus } from '../types';
 import { useCollection } from '../hooks/useCollection';
 import { FilterBar } from './FilterBar';
@@ -12,6 +12,7 @@ import { SharePanel } from './SharePanel';
 import { StatsView } from './StatsView';
 import { QuickEntryPanel } from './QuickEntryPanel';
 import { SharedDoublesPanel } from './SharedDoublesPanel';
+import { CompletionToast, ToastItem } from './CompletionToast';
 import { decodeDoubles } from '../utils/share';
 
 type Tab = 'album' | 'stats';
@@ -25,6 +26,22 @@ export function AlbumView() {
   const [showShare, setShowShare]           = useState(false);
   const [showQuickEntry, setShowQuickEntry] = useState(false);
   const [sharedDoubles, setSharedDoubles]   = useState<Record<number, number> | null>(null);
+  const [toasts, setToasts]                 = useState<ToastItem[]>([]);
+
+  const handleIncrement = useCallback((id: number) => {
+    const sticker = STICKERS_BY_ID[id];
+    if (sticker?.teamId) {
+      const teamStickers = STICKERS_BY_TEAM[sticker.teamId] ?? [];
+      const currentCollected = teamStickers.filter((s) => (copies[s.id] ?? 0) >= 1).length;
+      if ((copies[id] ?? 0) === 0 && currentCollected === teamStickers.length - 1) {
+        const team = TEAMS.find((t) => t.id === sticker.teamId)!;
+        const toastId = Date.now();
+        setToasts((prev) => [...prev, { id: toastId, teamName: team.name, flag: team.flag }]);
+        setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== toastId)), 3500);
+      }
+    }
+    increment(id);
+  }, [copies, increment]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -173,7 +190,7 @@ export function AlbumView() {
                   key={s.id}
                   sticker={s}
                   copies={copies[s.id] ?? 0}
-                  onIncrement={increment}
+                  onIncrement={handleIncrement}
                   onDecrement={decrement}
                 />
               ))}
@@ -218,7 +235,7 @@ export function AlbumView() {
                   stickers={filteredStickersByTeam[team.id] ?? STICKERS_BY_TEAM[team.id] ?? []}
                   copies={copies}
                   filter={activeFilter}
-                  onIncrement={increment}
+                  onIncrement={handleIncrement}
                   onDecrement={decrement}
                 />
               ))}
@@ -254,7 +271,7 @@ export function AlbumView() {
                   key={s.id}
                   sticker={s}
                   copies={copies[s.id] ?? 0}
-                  onIncrement={increment}
+                  onIncrement={handleIncrement}
                   onDecrement={decrement}
                 />
               ))}
@@ -267,6 +284,8 @@ export function AlbumView() {
         </p>
       </main>}
 
+      <CompletionToast toasts={toasts} />
+
       {sharedDoubles && (
         <SharedDoublesPanel
           sharedDoubles={sharedDoubles}
@@ -277,7 +296,7 @@ export function AlbumView() {
       {showQuickEntry && (
         <QuickEntryPanel
           copies={copies}
-          onIncrement={increment}
+          onIncrement={handleIncrement}
           onDecrement={decrement}
           onAddPack={() => setPacks(packs + 1)}
           onClose={() => setShowQuickEntry(false)}

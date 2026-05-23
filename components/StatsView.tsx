@@ -29,6 +29,8 @@ export function StatsView({ copies, packs, onPacksChange, spent, collected, tota
   const top5    = sorted.slice(0, 5);
   const bottom5 = [...sorted].reverse().slice(0, 5);
 
+  const completedTeams = teamStats.filter((t) => t.pct === 100);
+
   const top3doubles = [...teamStats]
     .filter((t) => t.doubles > 0)
     .sort((a, b) => b.doubles - a.doubles)
@@ -105,6 +107,28 @@ export function StatsView({ copies, packs, onPacksChange, spent, collected, tota
           + {TOTAL_CC} vignettes Coca-Cola trackées séparément
         </p>
       </section>
+
+      {/* ── Équipes complètes ── */}
+      {completedTeams.length > 0 && (
+        <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+          <h2 className="font-bold text-gray-800 dark:text-gray-100 mb-3 text-base flex items-center gap-2">
+            <span>🏅</span> Équipes complètes
+            <span className="ml-auto text-sm font-black text-green-600 dark:text-green-400">{completedTeams.length} / {TEAMS.length}</span>
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {completedTeams.map(({ team, total }) => (
+              <div
+                key={team.id}
+                className="flex items-center gap-1.5 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-xl px-3 py-1.5"
+              >
+                <span className="text-lg leading-none">{team.flag}</span>
+                <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{team.name}</span>
+                <span className="text-[10px] text-green-600 dark:text-green-400 font-bold ml-0.5">✓ {total}/{total}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ── Top 5 / Flop 5 ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

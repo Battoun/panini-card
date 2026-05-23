@@ -21,6 +21,7 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 - Top 5 / Flop 5 équipes par taux de complétion
 - Top 3 équipes avec le plus de doubles
 - Liste des vignettes en triple ou plus
+- **Équipes complètes** — section dédiée listant toutes les équipes à 100%, avec badge vert dans l'album et toast de célébration au moment où tu colles la dernière vignette d'une équipe
 
 ### Export / Import
 - Export de la liste des doubles (texte lisible)
@@ -41,7 +42,6 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 
 ### Statistiques avancées
 - **Courbe de progression** — graphique montrant l'évolution de l'album dans le temps
-- **Alertes de complétion d'équipe** — badge ou notification quand une équipe atteint 100%
 
 ## Stack technique
 
