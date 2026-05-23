@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { ALL_STICKERS, TEAMS, STICKERS_BY_TEAM, TOTAL_STICKERS, TOTAL_BASE, TOTAL_CC, GROUPS } from '../data/album';
 import { FilterStatus } from '../types';
 import { useCollection } from '../hooks/useCollection';
@@ -11,6 +11,8 @@ import { StickerCard } from './StickerCard';
 import { SharePanel } from './SharePanel';
 import { StatsView } from './StatsView';
 import { QuickEntryPanel } from './QuickEntryPanel';
+import { SharedDoublesPanel } from './SharedDoublesPanel';
+import { decodeDoubles } from '../utils/share';
 
 type Tab = 'album' | 'stats';
 
@@ -20,8 +22,20 @@ export function AlbumView() {
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [teamFilter, setTeamFilter] = useState('');
   const [search, setSearch] = useState('');
-  const [showShare, setShowShare] = useState(false);
+  const [showShare, setShowShare]           = useState(false);
   const [showQuickEntry, setShowQuickEntry] = useState(false);
+  const [sharedDoubles, setSharedDoubles]   = useState<Record<number, number> | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token  = params.get('share');
+    if (token) {
+      const decoded = decodeDoubles(token);
+      if (Object.keys(decoded).length > 0) setSharedDoubles(decoded);
+      // Nettoie l'URL sans recharger la page
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const specialStickers = useMemo(() => ALL_STICKERS.filter((s) => !s.teamId && !s.displayId.startsWith('CC')), []);
   const ccStickers      = useMemo(() => ALL_STICKERS.filter((s) => s.displayId.startsWith('CC')), []);
@@ -252,6 +266,13 @@ export function AlbumView() {
           {TOTAL_BASE} vignettes standards + {TOTAL_CC} Coca-Cola · 48 équipes · 12 groupes · FIFA World Cup 2026
         </p>
       </main>}
+
+      {sharedDoubles && (
+        <SharedDoublesPanel
+          sharedDoubles={sharedDoubles}
+          onClose={() => setSharedDoubles(null)}
+        />
+      )}
 
       {showQuickEntry && (
         <QuickEntryPanel

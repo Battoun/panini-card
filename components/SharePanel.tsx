@@ -1,7 +1,9 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
+import QRCode from 'qrcode';
 import { ALL_STICKERS, STICKERS_BY_ID, TEAMS, STICKERS_BY_TEAM, GROUPS } from '../data/album';
+import { encodeDoubles } from '../utils/share';
 
 interface Props {
   copies: Record<number, number>;
@@ -12,11 +14,32 @@ interface Props {
 }
 
 export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Props) {
-  const [tab, setTab] = useState<'list' | 'missing' | 'export' | 'import'>('list');
+  const [tab, setTab] = useState<'list' | 'missing' | 'share' | 'export' | 'import'>('list');
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState('');
   const [copied, setCopied]         = useState(false);
   const [copiedMissing, setCopiedMissing] = useState(false);
+  const [copiedLink, setCopiedLink]       = useState(false);
+  const [qrDataUrl, setQrDataUrl]         = useState('');
+
+  const shareUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}${window.location.pathname}?share=${encodeDoubles(copies)}`
+    : '';
+
+  const doublesCount = Object.values(copies).filter((v) => v >= 2).length;
+
+  useEffect(() => {
+    if (tab !== 'share' || !shareUrl || doublesCount === 0) return;
+    QRCode.toDataURL(shareUrl, { width: 300, margin: 2, errorCorrectionLevel: 'Q', color: { dark: '#000000', light: '#ffffff' } })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(''));
+  }, [tab, shareUrl, doublesCount]);
+
+  const handleCopyLink = async () => {
+    await navigator.clipboard.writeText(shareUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
   const fileRef = useRef<HTMLInputElement>(null);
 
   const doublesList = ALL_STICKERS
@@ -119,17 +142,17 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b px-4">
-          {(['list', 'missing', 'export', 'import'] as const).map((t) => (
+        <div className="flex border-b px-4 overflow-x-auto">
+          {(['list', 'missing', 'share', 'export', 'import'] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={[
-                'py-2 px-3 text-sm font-medium border-b-2 -mb-px transition-colors',
+                'py-2 px-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap',
                 tab === t ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700',
               ].join(' ')}
             >
-              {t === 'list' ? 'Doubles' : t === 'missing' ? 'Manquantes' : t === 'export' ? 'Sauvegarder' : 'Restaurer'}
+              {t === 'list' ? 'Doubles' : t === 'missing' ? 'Manquantes' : t === 'share' ? 'Lien / QR' : t === 'export' ? 'Sauvegarder' : 'Restaurer'}
             </button>
           ))}
         </div>
@@ -175,6 +198,39 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
               >
                 {copiedMissing ? 'Copié !' : 'Copier dans le presse-papier'}
               </button>
+            </div>
+          )}
+
+          {tab === 'share' && (
+            <div className="space-y-4">
+              {doublesCount === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-8">Aucun double à partager pour le moment.</p>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-600">
+                    Partage ce lien ou ce QR code — la personne verra directement ta liste de <span className="font-semibold">{doublesCount} doubles</span> disponibles.
+                  </p>
+
+                  {qrDataUrl ? (
+                    <div className="flex justify-center">
+                      <img src={qrDataUrl} alt="QR code doubles" className="rounded-xl border border-gray-100 shadow-sm" width={300} height={300} />
+                    </div>
+                  ) : (
+                    <div className="flex justify-center items-center h-[220px] text-gray-300 text-sm">Génération…</div>
+                  )}
+
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2 border border-gray-200">
+                    <span className="text-xs text-gray-500 truncate flex-1 font-mono">{shareUrl}</span>
+                  </div>
+
+                  <button
+                    onClick={handleCopyLink}
+                    className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors"
+                  >
+                    {copiedLink ? 'Lien copié !' : 'Copier le lien'}
+                  </button>
+                </>
+              )}
             </div>
           )}
 
