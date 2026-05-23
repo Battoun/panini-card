@@ -36,6 +36,9 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 - **Mode comparaison** — importer le fichier JSON d'un ami (exporté depuis l'app) et comparer automatiquement les deux collections : afficher les vignettes que tu as en double et qu'il lui manque, et inversement celles qu'il a en double et qu'il te manquent. Résultat : une liste d'échanges possibles dans les deux sens, prête à partager.
 - **Suivi des échanges** — enregistrer chaque échange réalisé : avec qui, quelles vignettes données, quelles vignettes reçues en retour. Les vignettes données sont automatiquement retirées des doubles disponibles. Un historique permet de retrouver tous les échanges passés avec leur date, et des stats globales indiquent combien de vignettes ont été données et reçues au total via les échanges.
 
+### Interface
+- **Thème clair / sombre** — l'app est actuellement en thème clair uniquement ; ajouter un toggle pour basculer en mode sombre, avec sauvegarde de la préférence
+
 ### Statistiques avancées
 - **Courbe de progression** — graphique montrant l'évolution de l'album dans le temps
 - **Alertes de complétion d'équipe** — badge ou notification quand une équipe atteint 100%
