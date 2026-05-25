@@ -10,7 +10,7 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 - Incrémentation / décrémentation du nombre de copies par vignette
 - **Saisie rapide par lot** — tape plusieurs IDs d'un coup (`FRA3 BRA7 ARG12`) pour enregistrer tout un paquet en quelques secondes
 - **Échange complet** — dans la saisie rapide, saisir les vignettes reçues (ajoutées) et les vignettes données (retirées), avec avertissement si tu donnes une vignette dont tu n'as pas de double
-- **Filtres** : Toutes / Manquantes / Collées / Doubles
+- **Filtres** : Toutes / Manquantes / Collées / Doubles / 🎯 Presque — affiche uniquement les équipes à 90%+ avec leurs vignettes manquantes
 - **Recherche** par nom de joueur, numéro ou équipe
 - **Filtre par équipe** avec menu déroulant groupé par poule
 - **Barre de progression par groupe** — taux de complétion affiché dans chaque header de groupe (A–L) pour voir d'un coup d'œil les groupes bien avancés
@@ -40,10 +40,6 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 
 ### Échanges
 - **Mode comparaison** — importer le fichier JSON d'un ami (exporté depuis l'app) et comparer automatiquement les deux collections : afficher les vignettes que tu as en double et qu'il lui manque, et inversement celles qu'il a en double et qu'il te manquent. Résultat : une liste d'échanges possibles dans les deux sens, prête à partager.
-
-
-### Quotidien & confort
-- **Filtre "presque complètes"** — dans l'album, un filtre rapide pour afficher uniquement les équipes à 90%+ afin de se concentrer sur celles qu'il reste peu à finir
 
 
 

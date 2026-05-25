@@ -15,10 +15,11 @@ interface Props {
 }
 
 const STATUS_OPTIONS: { value: FilterStatus; label: string }[] = [
-  { value: 'all',       label: 'Tout'       },
-  { value: 'missing',   label: 'Manquantes' },
-  { value: 'collected', label: 'Collées'    },
-  { value: 'doubles',   label: 'Doubles'    },
+  { value: 'all',       label: 'Tout'          },
+  { value: 'missing',   label: 'Manquantes'    },
+  { value: 'collected', label: 'Collées'       },
+  { value: 'doubles',   label: 'Doubles'       },
+  { value: 'almost',    label: '🎯 Presque'    },
 ];
 
 export function FilterBar({ filter, onFilterChange, teamFilter, onTeamChange, search, onSearchChange, onShare, onQuickEntry }: Props) {

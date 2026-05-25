@@ -57,8 +57,8 @@ export function AlbumView() {
   const specialStickers = useMemo(() => ALL_STICKERS.filter((s) => !s.teamId && !s.displayId.startsWith('CC')), []);
   const ccStickers      = useMemo(() => ALL_STICKERS.filter((s) => s.displayId.startsWith('CC')), []);
 
-  const showSpecial = !teamFilter || teamFilter === '__special__';
-  const showCC      = !teamFilter || teamFilter === '__special__';
+  const showSpecial = (!teamFilter || teamFilter === '__special__') && filter !== 'almost';
+  const showCC      = (!teamFilter || teamFilter === '__special__') && filter !== 'almost';
   const showTeams   = !teamFilter || teamFilter !== '__special__';
 
   // Teams to display (single team filter or all)
@@ -118,7 +118,19 @@ export function AlbumView() {
     return map;
   }, [searchFilteredTeams]);
 
-  const activeFilter = search ? 'all' : filter;
+  const almostTeams = useMemo(() => {
+    if (filter !== 'almost') return null;
+    return new Set(
+      TEAMS.filter((t) => {
+        const stickers = STICKERS_BY_TEAM[t.id] ?? [];
+        if (stickers.length === 0) return false;
+        const collected = stickers.filter((s) => (copies[s.id] ?? 0) >= 1).length;
+        return collected / stickers.length >= 0.9;
+      }).map((t) => t.id)
+    );
+  }, [filter, copies]);
+
+  const activeFilter = search ? 'all' : filter === 'almost' ? 'missing' : filter;
   const isEmpty = filteredSpecial.length === 0 && filteredCC.length === 0 && searchFilteredTeams.length === 0;
 
   if (!hydrated) {
@@ -245,7 +257,9 @@ export function AlbumView() {
                 );
               })()}
 
-              {teamsInGroup.map((team) => (
+              {teamsInGroup
+                .filter((team) => !almostTeams || almostTeams.has(team.id))
+                .map((team) => (
                 <TeamSection
                   key={team.id}
                   team={team}

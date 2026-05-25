@@ -21,7 +21,7 @@ export interface Team {
 
 export type Confederation = 'CONMEBOL' | 'UEFA' | 'CAF' | 'AFC' | 'CONCACAF' | 'OFC' | 'Playoff';
 
-export type FilterStatus = 'all' | 'missing' | 'collected' | 'doubles';
+export type FilterStatus = 'all' | 'missing' | 'collected' | 'doubles' | 'almost';
 
 export interface CollectionData {
   copies: Record<number, number>;
