@@ -224,13 +224,26 @@ export function AlbumView() {
           return (
             <div key={g} className="mb-2">
               {/* Group header */}
-              <div className="flex items-center gap-3 mb-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm">
-                  {g}
-                </div>
-                <h3 className="font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wide">Groupe {g}</h3>
-                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-              </div>
+              {(() => {
+                const groupTotal     = teamsInGroup.reduce((acc, t) => acc + (STICKERS_BY_TEAM[t.id]?.length ?? 0), 0);
+                const groupCollected = teamsInGroup.reduce((acc, t) =>
+                  acc + (STICKERS_BY_TEAM[t.id] ?? []).filter((s) => (copies[s.id] ?? 0) >= 1).length, 0);
+                const groupPct = groupTotal > 0 ? Math.round((groupCollected / groupTotal) * 100) : 0;
+                return (
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-sm shrink-0">
+                      {g}
+                    </div>
+                    <h3 className="font-bold text-gray-700 dark:text-gray-200 text-sm uppercase tracking-wide shrink-0">Groupe {g}</h3>
+                    <div className="flex-1 flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-blue-400 rounded-full transition-all duration-500" style={{ width: `${groupPct}%` }} />
+                      </div>
+                      <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 shrink-0">{groupPct}%</span>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {teamsInGroup.map((team) => (
                 <TeamSection

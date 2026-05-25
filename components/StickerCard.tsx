@@ -58,7 +58,10 @@ export const StickerCard = memo(function StickerCard({ sticker, copies, onIncrem
 
       <div className="flex items-center gap-0.5 mt-auto">
         <button
-          onClick={() => onDecrement(sticker.id)}
+          onClick={() => {
+            if (copies === 1 && !window.confirm(`Retirer ${sticker.displayId} de ta collection ?`)) return;
+            onDecrement(sticker.id);
+          }}
           className="w-5 h-5 rounded text-xs font-bold flex items-center justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 transition-colors"
           aria-label="Retirer"
         >−</button>

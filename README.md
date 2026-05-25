@@ -13,6 +13,8 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 - **Filtres** : Toutes / Manquantes / Collées / Doubles
 - **Recherche** par nom de joueur, numéro ou équipe
 - **Filtre par équipe** avec menu déroulant groupé par poule
+- **Barre de progression par groupe** — taux de complétion affiché dans chaque header de groupe (A–L) pour voir d'un coup d'œil les groupes bien avancés
+- **Confirmation avant décrémentation à zéro** — demande de confirmation si tu retires la dernière copie d'une vignette, pour éviter les fausses manips
 
 ### Statistiques
 - Suivi du nombre de paquets ouverts (1 paquet = 7 vignettes = 1,50 €)
@@ -38,6 +40,11 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 
 ### Échanges
 - **Mode comparaison** — importer le fichier JSON d'un ami (exporté depuis l'app) et comparer automatiquement les deux collections : afficher les vignettes que tu as en double et qu'il lui manque, et inversement celles qu'il a en double et qu'il te manquent. Résultat : une liste d'échanges possibles dans les deux sens, prête à partager.
+
+
+### Quotidien & confort
+- **Filtre "presque complètes"** — dans l'album, un filtre rapide pour afficher uniquement les équipes à 90%+ afin de se concentrer sur celles qu'il reste peu à finir
+
 
 
 ## Stack technique
