@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { TEAMS, STICKERS_BY_TEAM, ALL_STICKERS, TOTAL_STICKERS, TOTAL_BASE, TOTAL_CC } from '../data/album';
+import { ExchangeHistoryItem } from '../types';
 
 const PACK_PRICE = 1.5;
 
@@ -16,9 +17,11 @@ interface Props {
   exchangeReceived: number;
   onExchangeGivenChange: (n: number) => void;
   onExchangeReceivedChange: (n: number) => void;
+  exchangeHistory: ExchangeHistoryItem[];
+  onUndoExchangeEntry: (entry: ExchangeHistoryItem) => void;
 }
 
-export function StatsView({ copies, packs, onPacksChange, spent, collected, totalDoubles, exchangeGiven, exchangeReceived, onExchangeGivenChange, onExchangeReceivedChange }: Props) {
+export function StatsView({ copies, packs, onPacksChange, spent, collected, totalDoubles, exchangeGiven, exchangeReceived, onExchangeGivenChange, onExchangeReceivedChange, exchangeHistory, onUndoExchangeEntry }: Props) {
 
   const teamStats = useMemo(() =>
     TEAMS.map((team) => {
@@ -131,6 +134,52 @@ export function StatsView({ copies, packs, onPacksChange, spent, collected, tota
             </div>
           </div>
         </div>
+      </section>
+
+      {/* ── Historique échanges ── */}
+      <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
+        <h2 className="font-bold text-gray-800 dark:text-gray-100 mb-3 text-base flex items-center gap-2">
+          Derniers échanges
+          <span className="ml-auto text-xs font-semibold text-gray-400 dark:text-gray-500">{exchangeHistory.length} au total</span>
+        </h2>
+        {exchangeHistory.length === 0 ? (
+          <p className="text-xs text-gray-400 dark:text-gray-500 italic text-center py-2">Aucun échange enregistré pour l'instant</p>
+        ) : (
+          <div className="space-y-1.5">
+            {exchangeHistory.slice(0, 10).map((entry) => {
+              const giveCount    = entry.giveDisplayId.includes(',') ? entry.giveDisplayId.split(',').length : null;
+              const receiveCount = entry.receiveDisplayId.includes(',') ? entry.receiveDisplayId.split(',').length : null;
+              return (
+                <div key={entry.id} className="flex items-center gap-2 text-xs py-1 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                  <span className="text-green-600 dark:text-green-400 font-bold">↓</span>
+                  <span className="font-mono font-bold text-gray-700 dark:text-gray-200 shrink-0">
+                    {receiveCount != null ? `${receiveCount} reçues` : entry.receiveDisplayId}
+                  </span>
+                  <span className="text-gray-300 dark:text-gray-600">·</span>
+                  <span className="text-orange-500 dark:text-orange-400 font-bold">↑</span>
+                  <span className="font-mono font-bold text-gray-700 dark:text-gray-200 shrink-0">
+                    {giveCount != null ? `${giveCount} données` : entry.giveDisplayId}
+                  </span>
+                  <span className="ml-auto flex items-center gap-1.5 shrink-0">
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                      {new Date(entry.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}
+                    </span>
+                    <button
+                      onClick={() => onUndoExchangeEntry(entry)}
+                      className="text-[10px] text-red-400 hover:text-red-600 dark:hover:text-red-300 font-semibold border border-red-200 dark:border-red-800 rounded px-1.5 py-0.5 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                      Annuler
+                    </button>
+                  </span>
+                </div>
+              );
+            })}
+            {exchangeHistory.length > 10 && (
+              <p className="text-[11px] text-gray-400 dark:text-gray-500 text-center pt-1">
+                + {exchangeHistory.length - 10} échanges plus anciens
+              </p>
+            )}
+          </div>
+        )}
       </section>
 
       {/* ── Progression album ── */}

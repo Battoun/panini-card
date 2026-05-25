@@ -17,11 +17,11 @@ interface Props {
   onIncrement: (id: number) => void;
   onDecrement: (id: number) => void;
   onAddPack: () => void;
-  onExchange: (given: number, received: number) => void;
+  onRecordBatchExchange: (give: { id: number; displayId: string }[], receive: { id: number; displayId: string }[]) => void;
   onClose: () => void;
 }
 
-export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, onExchange, onClose }: Props) {
+export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, onRecordBatchExchange, onClose }: Props) {
   const [mode, setMode]           = useState<Mode | null>(null);
   const [inputRec, setInputRec]   = useState('');
   const [inputGiven, setInputGiven] = useState('');
@@ -94,7 +94,10 @@ export function QuickEntryPanel({ copies, onIncrement, onDecrement, onAddPack, o
     }
 
     if (mode === 'sachet') onAddPack();
-    if (mode === 'echange') onExchange(snapshotGiven.length, snapshotRec.length);
+    if (mode === 'echange') onRecordBatchExchange(
+      snapshotGiven.map((r) => ({ id: r.sticker.id, displayId: r.sticker.displayId })),
+      snapshotRec.map((r)   => ({ id: r.sticker.id, displayId: r.sticker.displayId })),
+    );
     setResultRec(snapshotRec);
     setResultGiven(snapshotGiven);
     setApplied(true);

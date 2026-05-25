@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { CollectionData } from '../types';
+import { CollectionData, ExchangeHistoryItem } from '../types';
 
 const STORAGE_KEY = 'panini-wc2026-collection';
 const PACK_PRICE  = 1.5;
@@ -11,8 +11,16 @@ function loadFromStorage(): CollectionData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { copies: {}, packs: 0, lastUpdated: '' };
-    const parsed = JSON.parse(raw) as CollectionData;
-    return { ...parsed, packs: parsed.packs ?? 0 };
+    const parsed = JSON.parse(raw) as CollectionData & { exchangeHistory?: Record<string, unknown>[] };
+    const exchangeHistory = (parsed.exchangeHistory ?? []).map((raw) => {
+      const e = raw as unknown as Record<string, unknown>;
+      return {
+        ...e,
+        giveIds:    Array.isArray(e.giveIds)    ? e.giveIds    : (e.giveId    != null ? [e.giveId]    : []),
+        receiveIds: Array.isArray(e.receiveIds) ? e.receiveIds : (e.receiveId != null ? [e.receiveId] : []),
+      };
+    });
+    return { ...parsed, packs: parsed.packs ?? 0, exchangeHistory } as CollectionData;
   } catch {
     return { copies: {}, packs: 0, lastUpdated: '' };
   }
@@ -79,8 +87,70 @@ export function useCollection() {
     setData((prev) => {
       const next: CollectionData = {
         ...prev,
-        exchangeGiven:   (prev.exchangeGiven   ?? 0) + given,
-        exchangeReceived: (prev.exchangeReceived ?? 0) + received,
+        exchangeGiven:   Math.max(0, (prev.exchangeGiven   ?? 0) + given),
+        exchangeReceived: Math.max(0, (prev.exchangeReceived ?? 0) + received),
+        lastUpdated: new Date().toISOString(),
+      };
+      saveToStorage(next);
+      return next;
+    });
+  }, []);
+
+  const recordBatchExchange = useCallback((
+    giveStickers: { id: number; displayId: string }[],
+    receiveStickers: { id: number; displayId: string }[],
+  ) => {
+    if (giveStickers.length === 0 && receiveStickers.length === 0) return;
+    setData((prev) => {
+      const entry: ExchangeHistoryItem = {
+        id: Date.now(),
+        date: new Date().toISOString(),
+        giveIds: giveStickers.map((s) => s.id),
+        giveDisplayId: giveStickers.map((s) => s.displayId).join(', '),
+        receiveIds: receiveStickers.map((s) => s.id),
+        receiveDisplayId: receiveStickers.map((s) => s.displayId).join(', '),
+      };
+      const next: CollectionData = {
+        ...prev,
+        exchangeGiven:    Math.max(0, (prev.exchangeGiven   ?? 0) + giveStickers.length),
+        exchangeReceived: Math.max(0, (prev.exchangeReceived ?? 0) + receiveStickers.length),
+        exchangeHistory:  [entry, ...(prev.exchangeHistory ?? [])].slice(0, 20),
+        lastUpdated: new Date().toISOString(),
+      };
+      saveToStorage(next);
+      return next;
+    });
+  }, []);
+
+  const recordExchange = useCallback((giveId: number, giveDisplayId: string, receiveId: number, receiveDisplayId: string) => {
+    setData((prev) => {
+      const entry: ExchangeHistoryItem = {
+        id: Date.now(),
+        date: new Date().toISOString(),
+        giveIds: [giveId],
+        giveDisplayId,
+        receiveIds: [receiveId],
+        receiveDisplayId,
+      };
+      const next: CollectionData = {
+        ...prev,
+        exchangeGiven:    Math.max(0, (prev.exchangeGiven   ?? 0) + 1),
+        exchangeReceived: Math.max(0, (prev.exchangeReceived ?? 0) + 1),
+        exchangeHistory:  [entry, ...(prev.exchangeHistory ?? [])].slice(0, 20),
+        lastUpdated: new Date().toISOString(),
+      };
+      saveToStorage(next);
+      return next;
+    });
+  }, []);
+
+  const undoExchange = useCallback((entryId: number) => {
+    setData((prev) => {
+      const next: CollectionData = {
+        ...prev,
+        exchangeGiven:    Math.max(0, (prev.exchangeGiven   ?? 0) - 1),
+        exchangeReceived: Math.max(0, (prev.exchangeReceived ?? 0) - 1),
+        exchangeHistory:  (prev.exchangeHistory ?? []).filter((h) => h.id !== entryId),
         lastUpdated: new Date().toISOString(),
       };
       saveToStorage(next);
@@ -167,6 +237,9 @@ export function useCollection() {
     decrement,
     setPacks,
     addExchange,
+    recordBatchExchange,
+    recordExchange,
+    undoExchange,
     setExchangeGiven,
     setExchangeReceived,
     importData,
@@ -177,5 +250,6 @@ export function useCollection() {
     packs:  data.packs,
     exchangeGiven:    data.exchangeGiven    ?? 0,
     exchangeReceived: data.exchangeReceived ?? 0,
+    exchangeHistory:  data.exchangeHistory  ?? [],
   };
 }

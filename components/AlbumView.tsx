@@ -19,7 +19,7 @@ import { decodeDoubles } from '../utils/share';
 type Tab = 'album' | 'stats';
 
 export function AlbumView() {
-  const { copies, hydrated, increment, decrement, setPacks, packs, importData, exportData, resetAll, stats, addExchange, setExchangeGiven, setExchangeReceived, exchangeGiven, exchangeReceived } = useCollection();
+  const { copies, hydrated, increment, decrement, setPacks, packs, importData, exportData, resetAll, stats, recordBatchExchange, recordExchange, undoExchange, setExchangeGiven, setExchangeReceived, exchangeGiven, exchangeReceived, exchangeHistory } = useCollection();
   const [tab, setTab] = useState<Tab>('album');
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [teamFilter, setTeamFilter] = useState('');
@@ -179,6 +179,12 @@ export function AlbumView() {
           exchangeReceived={exchangeReceived}
           onExchangeGivenChange={setExchangeGiven}
           onExchangeReceivedChange={setExchangeReceived}
+          exchangeHistory={exchangeHistory}
+          onUndoExchangeEntry={(entry) => {
+            (entry.receiveIds ?? []).forEach((id) => decrement(id));
+            (entry.giveIds ?? []).forEach((id) => increment(id));
+            undoExchange(entry.id);
+          }}
         />
       )}
 
@@ -323,6 +329,11 @@ export function AlbumView() {
       {showCompare && (
         <ComparePanel
           copies={copies}
+          onIncrement={handleIncrement}
+          onDecrement={decrement}
+          onRecordExchange={recordExchange}
+          onUndoExchange={undoExchange}
+          exchangeHistory={exchangeHistory}
           onClose={() => setShowCompare(false)}
         />
       )}
@@ -340,7 +351,7 @@ export function AlbumView() {
           onIncrement={handleIncrement}
           onDecrement={decrement}
           onAddPack={() => setPacks(packs + 1)}
-          onExchange={addExchange}
+          onRecordBatchExchange={recordBatchExchange}
           onClose={() => setShowQuickEntry(false)}
         />
       )}

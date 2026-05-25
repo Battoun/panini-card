@@ -23,10 +23,20 @@ export type Confederation = 'CONMEBOL' | 'UEFA' | 'CAF' | 'AFC' | 'CONCACAF' | '
 
 export type FilterStatus = 'all' | 'missing' | 'collected' | 'doubles' | 'almost';
 
+export interface ExchangeHistoryItem {
+  id: number;
+  date: string;
+  giveIds: number[];
+  giveDisplayId: string;
+  receiveIds: number[];
+  receiveDisplayId: string;
+}
+
 export interface CollectionData {
   copies: Record<number, number>;
   packs: number;
   lastUpdated: string;
   exchangeGiven?: number;
   exchangeReceived?: number;
+  exchangeHistory?: ExchangeHistoryItem[];
 }
