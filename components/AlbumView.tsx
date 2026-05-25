@@ -13,6 +13,7 @@ import { StatsView } from './StatsView';
 import { QuickEntryPanel } from './QuickEntryPanel';
 import { SharedDoublesPanel } from './SharedDoublesPanel';
 import { CompletionToast, ToastItem } from './CompletionToast';
+import { ComparePanel } from './ComparePanel';
 import { decodeDoubles } from '../utils/share';
 
 type Tab = 'album' | 'stats';
@@ -25,6 +26,7 @@ export function AlbumView() {
   const [search, setSearch] = useState('');
   const [showShare, setShowShare]           = useState(false);
   const [showQuickEntry, setShowQuickEntry] = useState(false);
+  const [showCompare, setShowCompare]       = useState(false);
   const [sharedDoubles, setSharedDoubles]   = useState<Record<number, number> | null>(null);
   const [toasts, setToasts]                 = useState<ToastItem[]>([]);
 
@@ -189,6 +191,7 @@ export function AlbumView() {
         onSearchChange={setSearch}
         onShare={() => setShowShare(true)}
         onQuickEntry={() => setShowQuickEntry(true)}
+        onCompare={() => setShowCompare(true)}
       />}
 
       {tab === 'album' && <main className="max-w-7xl mx-auto px-4 py-4 flex-1">
@@ -316,6 +319,13 @@ export function AlbumView() {
       </main>}
 
       <CompletionToast toasts={toasts} />
+
+      {showCompare && (
+        <ComparePanel
+          copies={copies}
+          onClose={() => setShowCompare(false)}
+        />
+      )}
 
       {sharedDoubles && (
         <SharedDoublesPanel

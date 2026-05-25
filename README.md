@@ -28,6 +28,7 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 ### Export / Import
 - Export de la liste des doubles (texte lisible)
 - **Lien de partage + QR code** — génère un lien encodé et un QR code à scanner ; la personne qui ouvre le lien voit directement ta liste de doubles disponibles
+- **Mode comparaison** — bouton "🔄 Comparer" dans la barre de filtres : colle le JSON d'un ami pour voir instantanément ce qu'il peut te donner (ses doubles qu'il te manquent) et ce que tu peux lui donner (tes doubles qu'il n'a pas), groupés par équipe
 - Export de la liste des manquantes groupée par équipe, prête à copier-coller pour les échanges
 - Sauvegarde de la collection complète en JSON
 - Restauration depuis un fichier JSON
@@ -38,8 +39,6 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 
 ## Améliorations futures
 
-### Échanges
-- **Mode comparaison** — importer le fichier JSON d'un ami (exporté depuis l'app) et comparer automatiquement les deux collections : afficher les vignettes que tu as en double et qu'il lui manque, et inversement celles qu'il a en double et qu'il te manquent. Résultat : une liste d'échanges possibles dans les deux sens, prête à partager.
 
 
 

@@ -12,6 +12,7 @@ interface Props {
   onSearchChange: (s: string) => void;
   onShare: () => void;
   onQuickEntry: () => void;
+  onCompare: () => void;
 }
 
 const STATUS_OPTIONS: { value: FilterStatus; label: string }[] = [
@@ -22,7 +23,7 @@ const STATUS_OPTIONS: { value: FilterStatus; label: string }[] = [
   { value: 'almost',    label: '🎯 Presque'    },
 ];
 
-export function FilterBar({ filter, onFilterChange, teamFilter, onTeamChange, search, onSearchChange, onShare, onQuickEntry }: Props) {
+export function FilterBar({ filter, onFilterChange, teamFilter, onTeamChange, search, onSearchChange, onShare, onQuickEntry, onCompare }: Props) {
   return (
     <div className="sticky top-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 py-2 flex flex-wrap items-center gap-2">
@@ -72,6 +73,12 @@ export function FilterBar({ filter, onFilterChange, teamFilter, onTeamChange, se
         />
 
         <div className="ml-auto flex gap-2">
+          <button
+            onClick={onCompare}
+            className="text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+          >
+            🔄 Comparer
+          </button>
           <button
             onClick={onQuickEntry}
             className="text-xs font-semibold bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg transition-colors"
