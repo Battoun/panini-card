@@ -56,7 +56,7 @@ export const TeamSection = memo(function TeamSection({ team, stickers, copies, f
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-1">
+      <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-0.5 sm:gap-1">
         {filtered.map((s) => (
           <StickerCard
             key={s.id}

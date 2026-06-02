@@ -235,7 +235,7 @@ export function AlbumView() {
         onCompare={() => setShowCompare(true)}
       />}
 
-      {tab === 'album' && <main className="max-w-7xl mx-auto px-2 sm:px-4 py-4 flex-1">
+      {tab === 'album' && <main className="max-w-7xl mx-auto px-1 sm:px-4 py-4 flex-1 overflow-x-hidden">
         {/* Vignettes spéciales */}
         {showSpecial && filteredSpecial.length > 0 && (
           <section className="mb-8">
@@ -244,7 +244,7 @@ export function AlbumView() {
               <h2 className="font-bold text-gray-800 dark:text-gray-100 text-sm">Vignettes spéciales</h2>
               <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">N°1–20</span>
             </div>
-            <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-1">
+            <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-0.5 sm:gap-1">
               {filteredSpecial.map((s) => (
                 <StickerCard
                   key={s.id}
@@ -340,7 +340,7 @@ export function AlbumView() {
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 ml-11">
               12 vignettes exclusives trouvées sur les étiquettes de bouteilles Coca-Cola (hors packs)
             </p>
-            <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-1">
+            <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-0.5 sm:gap-1">
               {filteredCC.map((s) => (
                 <StickerCard
                   key={s.id}
