@@ -39,8 +39,20 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 
 ## Améliorations futures
 
+### Système d'échanges (v2)
+Refonte complète du système d'échanges pour le rendre plus pratique et fiable :
+- **Persistance cloud** — aujourd'hui l'historique vit dans le `localStorage` du navigateur et disparaît si on change d'appareil ; le migrer vers une base de données (Supabase) pour l'avoir partout
+- **Échanges multi-cartes** — permettre de valider un échange de N-pour-N cartes en une seule transaction plutôt que carte par carte
+- **Statuts d'échange** — proposer / accepter / refuser un échange avec un ami (flux de confirmation des deux côtés)
+- **Historique enrichi** — afficher le nom de l'ami concerné, le résultat net sur la collection et la date précise
+- **Notifications** — recevoir une alerte quand un ami propose un échange ou qu'un accord est en attente
 
-
+### Comptes & communauté
+Passage d'une app 100 % locale à une plateforme avec backend :
+- **Création de compte** — authentification via Supabase (email/mot de passe ou OAuth Google/GitHub) pour synchroniser sa collection sur tous ses appareils
+- **Système d'amis** — ajouter des amis par pseudo ou lien d'invitation, voir leur collection en temps réel
+- **Page Amis** *(onglet déjà réservé dans la nav)* — tableau de bord listant tous ses amis, leur progression, et les échanges possibles calculés automatiquement sans avoir à échanger de fichiers JSON
+- **Matching d'échanges automatique** — détection en temps réel de "X a ce qu'il te manque et tu as ce qu'il lui manque" parmi tous ses amis en même temps
 
 ## Stack technique
 
