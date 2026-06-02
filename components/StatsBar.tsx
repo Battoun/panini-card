@@ -2,6 +2,7 @@
 
 import { TOTAL_STICKERS, TOTAL_BASE } from '../data/album';
 import { ThemeToggle } from './ThemeToggle';
+import { AuthButton } from './AuthButton';
 
 interface Props {
   collected: number;
@@ -28,6 +29,7 @@ export function StatsBar({ collected, collectedBase, doubles, totalDoubles }: Pr
             <Stat label="En double"    value={doubles}                             color="text-orange-300"/>
             <Stat label="Total doubles" value={totalDoubles}                       color="text-yellow-300"/>
             <ThemeToggle />
+            <AuthButton />
           </div>
         </div>
         <div className="mt-2 h-2 bg-blue-900/60 rounded-full overflow-hidden">

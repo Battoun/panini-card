@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import { ALL_STICKERS, TEAMS, STICKERS_BY_TEAM, STICKERS_BY_ID, TOTAL_BASE, TOTAL_CC, GROUPS } from '../data/album';
 import { FilterStatus } from '../types';
 import { useCollection } from '../hooks/useCollection';
+import { useAuth } from '../hooks/useAuth';
 import { FilterBar } from './FilterBar';
 import { StatsBar } from './StatsBar';
 import { TeamSection } from './TeamSection';
@@ -14,12 +15,15 @@ import { QuickEntryPanel } from './QuickEntryPanel';
 import { SharedDoublesPanel } from './SharedDoublesPanel';
 import { CompletionToast, ToastItem } from './CompletionToast';
 import { ComparePanel } from './ComparePanel';
+import { FriendsView } from './FriendsView';
+import { AuthModal } from './AuthModal';
 import { decodeDoubles } from '../utils/share';
 
-type Tab = 'album' | 'stats';
+type Tab = 'album' | 'stats' | 'friends';
 
 export function AlbumView() {
   const { copies, hydrated, increment, decrement, setPacks, packs, importData, exportData, resetAll, stats, recordBatchExchange, recordExchange, undoExchange, setExchangeGiven, setExchangeReceived, exchangeGiven, exchangeReceived, exchangeHistory } = useCollection();
+  const { user, loading: authLoading } = useAuth();
   const [tab, setTab] = useState<Tab>('album');
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [teamFilter, setTeamFilter] = useState('');
@@ -146,9 +150,13 @@ export function AlbumView() {
   if (!hydrated) {
     return (
       <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-        Chargement...
+        {authLoading || user ? 'Chargement de ta collection…' : ''}
       </div>
     );
+  }
+
+  if (!user) {
+    return <LoginPrompt />;
   }
 
   return (
@@ -172,10 +180,21 @@ export function AlbumView() {
               {label}
             </button>
           ))}
-          <span className="px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-gray-300 dark:text-gray-600 cursor-not-allowed flex items-center gap-1.5">
-            Amis
-            <span className="text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 px-1.5 py-0.5 rounded-full">bientôt</span>
-          </span>
+          {(authLoading || user) && (
+            <button
+              onClick={() => user && setTab('friends')}
+              className={[
+                'px-5 py-3 text-sm font-semibold border-b-2 transition-colors',
+                !user
+                  ? 'border-transparent text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  : tab === 'friends'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
+              ].join(' ')}
+            >
+              Amis
+            </button>
+          )}
         </div>
       </div>
 
@@ -201,6 +220,8 @@ export function AlbumView() {
           }}
         />
       )}
+
+      {tab === 'friends' && user && <FriendsView />}
 
       {tab === 'album' && <FilterBar
         filter={filter}
@@ -380,5 +401,29 @@ export function AlbumView() {
         />
       )}
     </>
+  );
+}
+
+function LoginPrompt() {
+  const [showAuth, setShowAuth] = useState(false);
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center gap-5 px-4 text-center">
+      <div className="text-6xl">📒</div>
+      <div>
+        <h2 className="text-xl font-bold text-gray-700 dark:text-gray-200 mb-2">
+          Connecte-toi pour accéder à ta collection
+        </h2>
+        <p className="text-sm text-gray-400 dark:text-gray-500 max-w-xs mx-auto">
+          Ta collection est sauvegardée dans le cloud et accessible depuis n'importe quel appareil.
+        </p>
+      </div>
+      <button
+        onClick={() => setShowAuth(true)}
+        className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors shadow-sm"
+      >
+        Se connecter / Créer un compte
+      </button>
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+    </div>
   );
 }
