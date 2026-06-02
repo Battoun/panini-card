@@ -23,7 +23,7 @@ export const StickerCard = memo(function StickerCard({ sticker, copies, onIncrem
     <div
       className={[
         'relative flex flex-col items-center rounded-lg border text-center select-none transition-all duration-150',
-        'w-16 h-[88px] p-1 gap-0.5',
+        'w-full h-22 p-1 gap-0.5 min-w-0',
         collected
           ? doubles > 0
             ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-400 shadow-sm shadow-orange-200 dark:shadow-none'

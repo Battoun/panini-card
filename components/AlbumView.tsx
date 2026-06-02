@@ -244,7 +244,7 @@ export function AlbumView() {
               <h2 className="font-bold text-gray-800 dark:text-gray-100 text-sm">Vignettes spéciales</h2>
               <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">N°1–20</span>
             </div>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-1">
               {filteredSpecial.map((s) => (
                 <StickerCard
                   key={s.id}
@@ -340,7 +340,7 @@ export function AlbumView() {
             <p className="text-xs text-gray-400 dark:text-gray-500 mb-2 ml-11">
               12 vignettes exclusives trouvées sur les étiquettes de bouteilles Coca-Cola (hors packs)
             </p>
-            <div className="flex flex-wrap gap-1.5 ml-0">
+            <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-8 gap-1">
               {filteredCC.map((s) => (
                 <StickerCard
                   key={s.id}
