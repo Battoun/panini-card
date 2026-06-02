@@ -28,7 +28,7 @@ export function FilterBar({ filter, onFilterChange, teamFilter, onTeamChange, se
     <div className="sticky top-0 z-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
 
       {/* Ligne 1 : filtres statut */}
-      <div className="max-w-7xl mx-auto px-3 pt-2 pb-1 overflow-x-auto">
+      <div className="max-w-7xl mx-auto px-2 sm:px-3 pt-2 pb-1 overflow-x-auto">
         <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5 gap-0.5 w-fit">
           {STATUS_OPTIONS.map((opt) => (
             <button
@@ -48,7 +48,7 @@ export function FilterBar({ filter, onFilterChange, teamFilter, onTeamChange, se
       </div>
 
       {/* Ligne 2 : équipe + recherche + boutons action */}
-      <div className="max-w-7xl mx-auto px-3 pb-2 flex items-center gap-2">
+      <div className="max-w-7xl mx-auto px-2 sm:px-3 pb-2 flex items-center gap-2">
         <select
           value={teamFilter}
           onChange={(e) => onTeamChange(e.target.value)}

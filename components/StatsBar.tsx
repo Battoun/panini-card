@@ -17,7 +17,7 @@ export function StatsBar({ collected, collectedBase, doubles, totalDoubles }: Pr
 
   return (
     <div className="w-full bg-linear-to-r from-blue-700 to-blue-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 pt-3 pb-2">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 pt-3 pb-2">
 
         {/* Ligne 1 : titre + boutons */}
         <div className="flex items-center justify-between mb-2">

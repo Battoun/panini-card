@@ -165,7 +165,7 @@ export function AlbumView() {
 
       {/* Onglets navigation */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 flex gap-0">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 flex gap-0">
           {([['album', 'Mon Album'], ['stats', 'Statistiques']] as [Tab, string][]).map(([t, label]) => (
             <button
               key={t}
@@ -235,7 +235,7 @@ export function AlbumView() {
         onCompare={() => setShowCompare(true)}
       />}
 
-      {tab === 'album' && <main className="max-w-7xl mx-auto px-4 py-4 flex-1">
+      {tab === 'album' && <main className="max-w-7xl mx-auto px-2 sm:px-4 py-4 flex-1">
         {/* Vignettes spéciales */}
         {showSpecial && filteredSpecial.length > 0 && (
           <section className="mb-8">
