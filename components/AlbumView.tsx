@@ -22,7 +22,7 @@ import { decodeDoubles } from '../utils/share';
 type Tab = 'album' | 'stats' | 'friends';
 
 export function AlbumView() {
-  const { copies, hydrated, increment, decrement, setPacks, packs, importData, exportData, resetAll, stats, recordBatchExchange, recordExchange, undoExchange, setExchangeGiven, setExchangeReceived, exchangeGiven, exchangeReceived, exchangeHistory } = useCollection();
+  const { copies, hydrated, increment, decrement, setPacks, packs, importData, exportData, resetAll, stats, recordBatchExchange, recordExchange, undoExchange, setExchangeGiven, setExchangeReceived, exchangeGiven, exchangeReceived, exchangeHistory, saveNow } = useCollection();
   const { user, loading: authLoading } = useAuth();
   const [tab, setTab] = useState<Tab>('album');
   const [filter, setFilter] = useState<FilterStatus>('all');
@@ -398,6 +398,8 @@ export function AlbumView() {
           onExport={exportData}
           onReset={resetAll}
           onClose={() => setShowShare(false)}
+          onSaveToCloud={saveNow}
+          isLoggedIn={!!user}
         />
       )}
     </>

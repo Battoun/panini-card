@@ -46,11 +46,12 @@ async function saveToSupabase(userId: string, collection: CollectionData) {
 
 export function useCollection() {
   const { user, loading: authLoading } = useAuth();
-  const [data, setData]       = useState<CollectionData>(EMPTY);
+  const [data, setData]         = useState<CollectionData>(EMPTY);
   const [hydrated, setHydrated] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const saveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const justLoaded = useRef(false); // skip the save triggered by the initial load
+  const justLoaded = useRef(false);
 
   // Load / reset when auth changes
   useEffect(() => {
@@ -82,12 +83,41 @@ export function useCollection() {
     }
 
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      saveToSupabase(user.id, data);
+    setSyncStatus('saving');
+    saveTimer.current = setTimeout(async () => {
+      const { error } = await (async () => {
+        const supabase = createClient();
+        return supabase.from('collections').upsert(
+          { user_id: user.id, copies: data, packs: data.packs, last_updated: new Date().toISOString() },
+          { onConflict: 'user_id' },
+        );
+      })();
+      setSyncStatus(error ? 'error' : 'saved');
+      if (error) console.error('[autoSave]', error);
+      setTimeout(() => setSyncStatus('idle'), 3000);
     }, SAVE_DEBOUNCE_MS);
 
     return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const saveNow = useCallback(async (): Promise<boolean> => {
+    if (!user) return false;
+    setSyncStatus('saving');
+    const supabase = createClient();
+    const { error } = await supabase.from('collections').upsert(
+      { user_id: user.id, copies: data, packs: data.packs, last_updated: new Date().toISOString() },
+      { onConflict: 'user_id' },
+    );
+    if (error) {
+      console.error('[saveNow]', error);
+      setSyncStatus('error');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+      return false;
+    }
+    setSyncStatus('saved');
+    setTimeout(() => setSyncStatus('idle'), 3000);
+    return true;
+  }, [user, data]);
 
   // ── Mutations ──────────────────────────────────────────────
 
@@ -242,6 +272,8 @@ export function useCollection() {
     undoExchange,
     setExchangeGiven,
     setExchangeReceived,
+    saveNow,
+    syncStatus,
     importData,
     exportData,
     resetAll,

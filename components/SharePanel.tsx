@@ -11,12 +11,15 @@ interface Props {
   onExport: () => string;
   onReset: () => void;
   onClose: () => void;
+  onSaveToCloud?: () => Promise<boolean>;
+  isLoggedIn?: boolean;
 }
 
-export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Props) {
+export function SharePanel({ copies, onImport, onExport, onReset, onClose, onSaveToCloud, isLoggedIn }: Props) {
   const [tab, setTab] = useState<'list' | 'missing' | 'share' | 'export' | 'import'>('list');
   const [importText, setImportText] = useState('');
   const [importError, setImportError] = useState('');
+  const [cloudStatus, setCloudStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [copied, setCopied]         = useState(false);
   const [copiedMissing, setCopiedMissing] = useState(false);
   const [copiedLink, setCopiedLink]       = useState(false);
@@ -236,6 +239,31 @@ export function SharePanel({ copies, onImport, onExport, onReset, onClose }: Pro
 
           {tab === 'export' && (
             <div className="space-y-3">
+              {isLoggedIn && onSaveToCloud && (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 space-y-2">
+                  <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 flex items-center gap-2">
+                    ☁️ Sauvegarde dans le cloud
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                    Enregistre ta collection sur ton compte pour la retrouver sur tous tes appareils.
+                  </p>
+                  <button
+                    onClick={async () => {
+                      setCloudStatus('saving');
+                      const ok = await onSaveToCloud();
+                      setCloudStatus(ok ? 'saved' : 'error');
+                      setTimeout(() => setCloudStatus('idle'), 3000);
+                    }}
+                    disabled={cloudStatus === 'saving'}
+                    className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold transition-colors"
+                  >
+                    {cloudStatus === 'saving' ? 'Sauvegarde…'
+                      : cloudStatus === 'saved'  ? '✓ Sauvegardé !'
+                      : cloudStatus === 'error'  ? '✗ Erreur — réessaie'
+                      : 'Sauvegarder maintenant'}
+                  </button>
+                </div>
+              )}
               <p className="text-sm text-gray-600 dark:text-gray-300">
                 Sauvegardez votre collection complète dans un fichier JSON pour la restaurer plus tard ou l'utiliser sur un autre appareil.
               </p>
