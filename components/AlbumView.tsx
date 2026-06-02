@@ -160,7 +160,7 @@ export function AlbumView() {
   }
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen w-full">
       <StatsBar collected={stats.collected} collectedBase={collectedBase} doubles={stats.doubles} totalDoubles={stats.totalDoubles} />
 
       {/* Onglets navigation */}
@@ -402,7 +402,7 @@ export function AlbumView() {
           isLoggedIn={!!user}
         />
       )}
-    </>
+    </div>
   );
 }
 

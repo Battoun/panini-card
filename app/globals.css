@@ -15,11 +15,6 @@ html, body {
   height: 100%;
 }
 
-#__next, body > div:first-child {
-  min-height: 100%;
-  display: flex;
-  flex-direction: column;
-}
 
 @keyframes toast-slide-up {
   from { opacity: 0; transform: translateY(10px); }

@@ -12,40 +12,54 @@ interface Props {
 }
 
 export function StatsBar({ collected, collectedBase, doubles, totalDoubles }: Props) {
-  const pct = Math.round((collectedBase / TOTAL_BASE) * 100);
+  const pct     = Math.round((collectedBase / TOTAL_BASE) * 100);
   const missing = TOTAL_STICKERS - collected;
 
   return (
-    <div className="bg-gradient-to-r from-blue-700 to-blue-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 py-3">
-        <div className="flex items-center gap-4 flex-wrap">
-          <div>
-            <p className="text-xs text-blue-200 uppercase tracking-wide font-semibold">FIFA World Cup 2026</p>
-            <p className="text-lg font-bold leading-tight">Mon album Panini</p>
+    <div className="w-full bg-linear-to-r from-blue-700 to-blue-900 text-white">
+      <div className="max-w-7xl mx-auto px-4 pt-3 pb-2">
+
+        {/* Ligne 1 : titre + boutons */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="min-w-0">
+            <p className="text-[10px] text-blue-200 uppercase tracking-wide font-semibold leading-none">FIFA World Cup 2026</p>
+            <p className="text-base font-bold leading-tight truncate">Mon album Panini</p>
           </div>
-          <div className="flex gap-4 ml-auto flex-wrap items-center">
-            <Stat label="Collées"      value={collected}    total={TOTAL_STICKERS} color="text-green-300" />
-            <Stat label="Manquantes"   value={missing}                             color="text-red-300"   />
-            <Stat label="En double"    value={doubles}                             color="text-orange-300"/>
-            <Stat label="Total doubles" value={totalDoubles}                       color="text-yellow-300"/>
+          <div className="flex items-center gap-2 shrink-0 ml-3">
             <ThemeToggle />
             <AuthButton />
           </div>
         </div>
-        <div className="mt-2 h-2 bg-blue-900/60 rounded-full overflow-hidden">
-          <div className="h-full bg-green-400 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
+
+        {/* Ligne 2 : stats en grille 4 colonnes */}
+        <div className="grid grid-cols-4 gap-1 mb-2">
+          <Stat label="Collées"       value={`${collected}/${TOTAL_STICKERS}`} color="text-green-300"  />
+          <Stat label="Manquantes"    value={String(missing)}                   color="text-red-300"   />
+          <Stat label="En double"     value={String(doubles)}                   color="text-orange-300"/>
+          <Stat label="Total ×2"      value={String(totalDoubles)}              color="text-yellow-300"/>
         </div>
-        <p className="text-xs text-blue-200 mt-0.5">{pct}% standards – {collectedBase}/{TOTAL_BASE} vignettes · {collected}/{TOTAL_STICKERS} au total</p>
+
+        {/* Ligne 3 : barre de progression */}
+        <div className="h-1.5 bg-blue-900/60 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-green-400 rounded-full transition-all duration-300"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <p className="text-[10px] text-blue-200 mt-0.5">
+          {pct}% standards — {collectedBase}/{TOTAL_BASE} · {collected}/{TOTAL_STICKERS} au total
+        </p>
+
       </div>
     </div>
   );
 }
 
-function Stat({ label, value, total, color }: { label: string; value: number; total?: number; color: string }) {
+function Stat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div className="text-center">
-      <p className={`text-lg font-bold leading-none ${color}`}>{value}{total ? `/${total}` : ''}</p>
-      <p className="text-[10px] text-blue-200 uppercase tracking-wide">{label}</p>
+      <p className={`text-sm font-black leading-none ${color}`}>{value}</p>
+      <p className="text-[9px] text-blue-200 uppercase tracking-wide mt-0.5 leading-none">{label}</p>
     </div>
   );
 }
