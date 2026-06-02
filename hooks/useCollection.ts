@@ -12,28 +12,36 @@ const EMPTY: CollectionData = { copies: {}, packs: 0, lastUpdated: '' };
 
 async function loadFromSupabase(userId: string): Promise<CollectionData | null> {
   const supabase = createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('collections')
-    .select('collection_data')
+    .select('copies, packs')
     .eq('user_id', userId)
     .maybeSingle();
-  if (!data?.collection_data) return null;
-  const d = data.collection_data as CollectionData;
-  return { ...EMPTY, ...d, packs: d.packs ?? 0 };
+  if (error) { console.error('[loadFromSupabase]', error); return null; }
+  if (!data) return null;
+  const raw = data.copies;
+  if (!raw || typeof raw !== 'object') return null;
+  // If full CollectionData is stored (has nested 'copies' key)
+  if ('copies' in (raw as object)) {
+    const cd = raw as CollectionData;
+    return { ...EMPTY, ...cd, packs: cd.packs ?? data.packs ?? 0 };
+  }
+  // Legacy format: only copies map stored
+  return { ...EMPTY, copies: raw as Record<number, number>, packs: data.packs ?? 0 };
 }
 
 async function saveToSupabase(userId: string, collection: CollectionData) {
   const supabase = createClient();
-  await supabase.from('collections').upsert(
+  const { error } = await supabase.from('collections').upsert(
     {
       user_id: userId,
-      copies: collection.copies,
-      packs: collection.packs,
-      collection_data: collection,
+      copies: collection,   // full CollectionData stored in the jsonb column
+      packs:  collection.packs,
       last_updated: new Date().toISOString(),
     },
     { onConflict: 'user_id' },
   );
+  if (error) console.error('[saveToSupabase]', error);
 }
 
 export function useCollection() {
