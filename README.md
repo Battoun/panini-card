@@ -44,7 +44,6 @@ Refonte complète du système d'échanges pour le rendre plus pratique et fiable
 - **Persistance cloud** — aujourd'hui l'historique vit dans le `localStorage` du navigateur et disparaît si on change d'appareil ; le migrer vers une base de données (Supabase) pour l'avoir partout
 - **Échanges multi-cartes** — permettre de valider un échange de N-pour-N cartes en une seule transaction plutôt que carte par carte
 - **Statuts d'échange** — proposer / accepter / refuser un échange avec un ami (flux de confirmation des deux côtés)
-- **Historique enrichi** — afficher le nom de l'ami concerné, le résultat net sur la collection et la date précise
 - **Notifications** — recevoir une alerte quand un ami propose un échange ou qu'un accord est en attente
 
 ### Comptes & communauté
