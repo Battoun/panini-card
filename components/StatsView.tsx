@@ -12,6 +12,8 @@ interface Props {
   onPacksChange: (n: number) => void;
   spent: number;
   collected: number;
+  collectedBase: number;
+  collectedCC: number;
   totalDoubles: number;
   exchangeGiven: number;
   exchangeReceived: number;
@@ -21,7 +23,7 @@ interface Props {
   onUndoExchangeEntry: (entry: ExchangeHistoryItem) => void;
 }
 
-export function StatsView({ copies, packs, onPacksChange, spent, collected, totalDoubles, exchangeGiven, exchangeReceived, onExchangeGivenChange, onExchangeReceivedChange, exchangeHistory, onUndoExchangeEntry }: Props) {
+export function StatsView({ copies, packs, onPacksChange, spent, collected, collectedBase, collectedCC, totalDoubles, exchangeGiven, exchangeReceived, onExchangeGivenChange, onExchangeReceivedChange, exchangeHistory, onUndoExchangeEntry }: Props) {
 
   const teamStats = useMemo(() =>
     TEAMS.map((team) => {
@@ -52,7 +54,9 @@ export function StatsView({ copies, packs, onPacksChange, spent, collected, tota
 
   const stickersReceived = packs * 7;
   const missing          = TOTAL_STICKERS - collected;
-  const pctAlbum         = Math.round((collected / TOTAL_BASE) * 100);
+  const pctBase          = Math.round((collectedBase / TOTAL_BASE) * 100);
+  const pctCC            = Math.round((collectedCC   / TOTAL_CC)   * 100);
+  const pctTotal         = Math.round((collected     / TOTAL_STICKERS) * 100);
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 flex-1 space-y-6">
@@ -184,18 +188,33 @@ export function StatsView({ copies, packs, onPacksChange, spent, collected, tota
 
       {/* ── Progression album ── */}
       <section className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-5">
-        <h2 className="font-bold text-gray-800 dark:text-gray-100 mb-3 text-base">Progression de l'album</h2>
-        <div className="flex items-end justify-between mb-1">
-          <span className="text-3xl font-black text-blue-700 dark:text-blue-400">{pctAlbum}%</span>
-          <span className="text-sm text-gray-400 dark:text-gray-500">{collected} / {TOTAL_BASE} vignettes standards</span>
+        <h2 className="font-bold text-gray-800 dark:text-gray-100 mb-4 text-base">Progression de l'album</h2>
+        <div className="space-y-4">
+          <ProgressRow
+            label="Standards"
+            pct={pctBase}
+            collected={collectedBase}
+            total={TOTAL_BASE}
+            barClass="bg-gradient-to-r from-blue-500 to-green-400"
+            pctClass="text-blue-700 dark:text-blue-400"
+          />
+          <ProgressRow
+            label="Coca-Cola"
+            pct={pctCC}
+            collected={collectedCC}
+            total={TOTAL_CC}
+            barClass="bg-gradient-to-r from-red-500 to-red-400"
+            pctClass="text-red-600 dark:text-red-400"
+          />
+          <ProgressRow
+            label="Total"
+            pct={pctTotal}
+            collected={collected}
+            total={TOTAL_STICKERS}
+            barClass="bg-gradient-to-r from-purple-500 to-blue-400"
+            pctClass="text-purple-700 dark:text-purple-400"
+          />
         </div>
-        <div className="h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-blue-500 to-green-400 rounded-full transition-all duration-500"
-            style={{ width: `${pctAlbum}%` }} />
-        </div>
-        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
-          + {TOTAL_CC} vignettes Coca-Cola trackées séparément
-        </p>
       </section>
 
       {/* ── Équipes complètes ── */}
@@ -275,6 +294,25 @@ export function StatsView({ copies, packs, onPacksChange, spent, collected, tota
       )}
 
     </main>
+  );
+}
+
+function ProgressRow({ label, pct, collected, total, barClass, pctClass }: {
+  label: string; pct: number; collected: number; total: number; barClass: string; pctClass: string;
+}) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-1">
+        <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{label}</span>
+        <div className="flex items-baseline gap-2">
+          <span className={`text-lg font-black ${pctClass}`}>{pct}%</span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">{collected} / {total}</span>
+        </div>
+      </div>
+      <div className="h-2.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className={`h-full ${barClass} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
   );
 }
 

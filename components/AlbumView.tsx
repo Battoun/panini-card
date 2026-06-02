@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { ALL_STICKERS, TEAMS, STICKERS_BY_TEAM, STICKERS_BY_ID, TOTAL_STICKERS, TOTAL_BASE, TOTAL_CC, GROUPS } from '../data/album';
+import { ALL_STICKERS, TEAMS, STICKERS_BY_TEAM, STICKERS_BY_ID, TOTAL_BASE, TOTAL_CC, GROUPS } from '../data/album';
 import { FilterStatus } from '../types';
 import { useCollection } from '../hooks/useCollection';
 import { FilterBar } from './FilterBar';
@@ -58,6 +58,14 @@ export function AlbumView() {
 
   const specialStickers = useMemo(() => ALL_STICKERS.filter((s) => !s.teamId && !s.displayId.startsWith('CC')), []);
   const ccStickers      = useMemo(() => ALL_STICKERS.filter((s) => s.displayId.startsWith('CC')), []);
+
+  const ccIds = useMemo(() => new Set(ccStickers.map((s) => s.id)), [ccStickers]);
+  const collectedBase = useMemo(() =>
+    Object.entries(copies).filter(([id, v]) => v >= 1 && !ccIds.has(Number(id))).length,
+  [copies, ccIds]);
+  const collectedCC = useMemo(() =>
+    Object.entries(copies).filter(([id, v]) => v >= 1 && ccIds.has(Number(id))).length,
+  [copies, ccIds]);
 
   const showSpecial = (!teamFilter || teamFilter === '__special__') && filter !== 'almost';
   const showCC      = (!teamFilter || teamFilter === '__special__') && filter !== 'almost';
@@ -145,7 +153,7 @@ export function AlbumView() {
 
   return (
     <>
-      <StatsBar collected={stats.collected} doubles={stats.doubles} totalDoubles={stats.totalDoubles} />
+      <StatsBar collected={stats.collected} collectedBase={collectedBase} doubles={stats.doubles} totalDoubles={stats.totalDoubles} />
 
       {/* Onglets navigation */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
@@ -164,6 +172,10 @@ export function AlbumView() {
               {label}
             </button>
           ))}
+          <span className="px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-gray-300 dark:text-gray-600 cursor-not-allowed flex items-center gap-1.5">
+            Amis
+            <span className="text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 px-1.5 py-0.5 rounded-full">bientôt</span>
+          </span>
         </div>
       </div>
 
@@ -174,6 +186,8 @@ export function AlbumView() {
           onPacksChange={setPacks}
           spent={stats.spent}
           collected={stats.collected}
+          collectedBase={collectedBase}
+          collectedCC={collectedCC}
           totalDoubles={stats.totalDoubles}
           exchangeGiven={exchangeGiven}
           exchangeReceived={exchangeReceived}

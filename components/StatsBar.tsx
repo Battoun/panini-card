@@ -1,16 +1,17 @@
 'use client';
 
-import { TOTAL_STICKERS } from '../data/album';
+import { TOTAL_STICKERS, TOTAL_BASE } from '../data/album';
 import { ThemeToggle } from './ThemeToggle';
 
 interface Props {
   collected: number;
+  collectedBase: number;
   doubles: number;
   totalDoubles: number;
 }
 
-export function StatsBar({ collected, doubles, totalDoubles }: Props) {
-  const pct = Math.round((collected / TOTAL_STICKERS) * 100);
+export function StatsBar({ collected, collectedBase, doubles, totalDoubles }: Props) {
+  const pct = Math.round((collectedBase / TOTAL_BASE) * 100);
   const missing = TOTAL_STICKERS - collected;
 
   return (
@@ -32,7 +33,7 @@ export function StatsBar({ collected, doubles, totalDoubles }: Props) {
         <div className="mt-2 h-2 bg-blue-900/60 rounded-full overflow-hidden">
           <div className="h-full bg-green-400 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
         </div>
-        <p className="text-xs text-blue-200 mt-0.5">{pct}% complété – {collected}/{TOTAL_STICKERS} vignettes (980 standards + 12 Coca-Cola)</p>
+        <p className="text-xs text-blue-200 mt-0.5">{pct}% standards – {collectedBase}/{TOTAL_BASE} vignettes · {collected}/{TOTAL_STICKERS} au total</p>
       </div>
     </div>
   );
