@@ -44,9 +44,9 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 ### Amis
 - **Recherche d'amis** par pseudo
 - **Demandes d'amis** — envoi, acceptation, refus, annulation
-- **Progression de ses amis** — barre de complétion visible directement sur la carte de chaque ami
+- **Progression de ses amis** — barre de complétion colorée visible sur la carte de chaque ami
 - **Détail d'un ami** — modal avec % global, équipes complètes, top 5 équipes, nombre de doubles
-- Bientôt : demandes d'échange directement entre amis
+- **Échanges disponibles** — onglet dédié dans le modal : cartes que l'ami peut te donner (ses doubles que tu n'as pas) et cartes que tu peux lui donner (tes doubles qu'il n'a pas), calculé en temps réel depuis vos deux collections cloud
 
 ### Export / Import
 - Export de la liste des doubles (texte lisible)
@@ -62,10 +62,8 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 
 ## Améliorations futures
 
-- **Demandes d'échange entre amis** — proposer / accepter / refuser un échange directement depuis la page Amis
-- **Matching automatique** — détection en temps réel des échanges possibles parmi tous ses amis
-- **Notifications** — alerte quand un ami envoie une demande d'ami ou d'échange
-- **Suppression de compte**
+- **Validation d'échange entre amis** — proposer / accepter / refuser un échange directement depuis la page Amis, avec mise à jour des deux collections
+
 
 ## Stack technique
 

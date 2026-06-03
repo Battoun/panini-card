@@ -15,6 +15,7 @@ export function ProfileView() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.replace('/');
@@ -37,6 +38,20 @@ export function ProfileView() {
   const handleSignOut = async () => {
     await signOut();
     router.replace('/');
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Supprimer définitivement ton compte ?\n\nToutes tes données (collection, amis, historique) seront effacées. Cette action est irréversible.')) return;
+    setDeleting(true);
+    const res = await fetch('/api/delete-account', { method: 'DELETE' });
+    if (res.ok) {
+      await signOut();
+      router.replace('/');
+    } else {
+      const { error } = await res.json();
+      alert(`Erreur : ${error ?? 'impossible de supprimer le compte'}`);
+      setDeleting(false);
+    }
   };
 
   if (loading || !user) {
@@ -121,15 +136,16 @@ export function ProfileView() {
           <div className="px-4 py-3 border-b border-red-50 dark:border-red-900/30">
             <h2 className="font-bold text-red-600 dark:text-red-400 text-sm">Zone de danger</h2>
           </div>
-          <div className="px-4 py-3">
-            <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
-              La suppression du compte est irréversible et effacera toutes tes données.
+          <div className="px-4 py-4 space-y-3">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Supprime définitivement ton compte, ta collection, ton historique d'échanges et tes liens d'amitié. Irréversible.
             </p>
             <button
-              disabled
-              className="text-xs font-semibold text-red-400 border border-red-200 dark:border-red-800 rounded-lg px-3 py-1.5 opacity-50 cursor-not-allowed"
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+              className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-bold transition-colors"
             >
-              Supprimer mon compte — bientôt disponible
+              {deleting ? 'Suppression en cours…' : '🗑 Supprimer mon compte'}
             </button>
           </div>
         </section>
