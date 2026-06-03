@@ -36,7 +36,7 @@ export function StatsBar({ collected, collectedBase, doubles, totalDoubles }: Pr
           <Stat label="Collées"       value={`${collected}/${TOTAL_STICKERS}`} color="text-green-300"  />
           <Stat label="Manquantes"    value={String(missing)}                   color="text-red-300"   />
           <Stat label="En double"     value={String(doubles)}                   color="text-orange-300"/>
-          <Stat label="Total ×2"      value={String(totalDoubles)}              color="text-yellow-300"/>
+          <Stat label="Total doubles"  value={String(totalDoubles)}              color="text-yellow-300"/>
         </div>
 
         {/* Ligne 3 : barre de progression */}

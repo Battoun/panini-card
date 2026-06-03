@@ -87,10 +87,13 @@ export function useCollection() {
     saveTimer.current = setTimeout(async () => {
       const { error } = await (async () => {
         const supabase = createClient();
-        return supabase.from('collections').upsert(
-          { user_id: user.id, copies: data, packs: data.packs, last_updated: new Date().toISOString() },
-          { onConflict: 'user_id' },
-        );
+        const payload = {
+          user_id:    user.id,
+          copies:     data,          // CollectionData complet : copies + packs + échanges + historique
+          packs:      data.packs,
+          last_updated: new Date().toISOString(),
+        };
+        return supabase.from('collections').upsert(payload, { onConflict: 'user_id' });
       })();
       setSyncStatus(error ? 'error' : 'saved');
       if (error) console.error('[autoSave]', error);
@@ -104,10 +107,13 @@ export function useCollection() {
     if (!user) return false;
     setSyncStatus('saving');
     const supabase = createClient();
-    const { error } = await supabase.from('collections').upsert(
-      { user_id: user.id, copies: data, packs: data.packs, last_updated: new Date().toISOString() },
-      { onConflict: 'user_id' },
-    );
+    const payload = {
+      user_id:      user.id,
+      copies:       data,          // CollectionData complet : copies + packs + échanges + historique
+      packs:        data.packs,
+      last_updated: new Date().toISOString(),
+    };
+    const { error } = await supabase.from('collections').upsert(payload, { onConflict: 'user_id' });
     if (error) {
       console.error('[saveNow]', error);
       setSyncStatus('error');
@@ -229,7 +235,10 @@ export function useCollection() {
       const normalized: CollectionData = {
         ...EMPTY,
         copies: Object.fromEntries(Object.entries(parsed.copies).map(([k, v]) => [k, Number(v)])),
-        packs: Number(parsed.packs ?? 0),
+        packs:            Number(parsed.packs ?? 0),
+        exchangeGiven:    Number(parsed.exchangeGiven    ?? 0),
+        exchangeReceived: Number(parsed.exchangeReceived ?? 0),
+        exchangeHistory:  Array.isArray(parsed.exchangeHistory) ? parsed.exchangeHistory : [],
         lastUpdated: new Date().toISOString(),
       };
       setData(normalized);
