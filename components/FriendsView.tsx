@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '../lib/supabase/client';
 import { useAuth } from '../hooks/useAuth';
+import { CollectionData } from '../types';
+import { TOTAL_BASE } from '../data/album';
+import { FriendDetailModal } from './FriendDetailModal';
 
 interface Profile { id: string; username: string }
 interface PendingIn  { requestId: string; from: Profile }
@@ -10,8 +13,8 @@ interface PendingOut { requestId: string; to: Profile }
 
 function Avatar({ username, size = 'md' }: { username: string; size?: 'sm' | 'md' }) {
   const colors = ['bg-blue-500','bg-green-500','bg-purple-500','bg-orange-500','bg-pink-500','bg-teal-500'];
-  const color = colors[username.charCodeAt(0) % colors.length];
-  const cls = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-10 h-10 text-sm';
+  const color  = colors[username.charCodeAt(0) % colors.length];
+  const cls    = size === 'sm' ? 'w-8 h-8 text-xs' : 'w-10 h-10 text-sm';
   return (
     <div className={`${cls} ${color} rounded-full flex items-center justify-center text-white font-black shrink-0`}>
       {username.slice(0, 2).toUpperCase()}
@@ -19,31 +22,39 @@ function Avatar({ username, size = 'md' }: { username: string; size?: 'sm' | 'md
   );
 }
 
+function MiniProgress({ pct }: { pct: number }) {
+  const color = pct === 100 ? 'bg-green-500' : pct >= 75 ? 'bg-blue-500' : pct >= 50 ? 'bg-yellow-500' : 'bg-gray-400';
+  return (
+    <div className="flex items-center gap-1.5 mt-1">
+      <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className={`h-full ${color} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 shrink-0 w-8 text-right">{pct}%</span>
+    </div>
+  );
+}
+
 export function FriendsView() {
   const { user } = useAuth();
-  const [search, setSearch]               = useState('');
-  const [searchResults, setSearchResults] = useState<Profile[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [friends, setFriends]             = useState<Profile[]>([]);
-  const [pendingIn, setPendingIn]         = useState<PendingIn[]>([]);
-  const [pendingOut, setPendingOut]       = useState<PendingOut[]>([]);
-  const [myUsername, setMyUsername]       = useState('');
-  const [loading, setLoading]             = useState(true);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [search, setSearch]                   = useState('');
+  const [searchResults, setSearchResults]     = useState<Profile[]>([]);
+  const [searchLoading, setSearchLoading]     = useState(false);
+  const [friends, setFriends]                 = useState<Profile[]>([]);
+  const [pendingIn, setPendingIn]             = useState<PendingIn[]>([]);
+  const [pendingOut, setPendingOut]           = useState<PendingOut[]>([]);
+  const [myUsername, setMyUsername]           = useState('');
+  const [loading, setLoading]                 = useState(true);
+  const [actionLoading, setActionLoading]     = useState<string | null>(null);
+  const [friendCollections, setFriendCollections] = useState<Record<string, CollectionData | null>>({});
+  const [selectedFriend, setSelectedFriend]   = useState<Profile | null>(null);
 
   const loadData = useCallback(async () => {
     if (!user) return;
     const supabase = createClient();
 
-    // Own profile
-    const { data: me } = await supabase
-      .from('profiles')
-      .select('username')
-      .eq('id', user.id)
-      .single();
+    const { data: me } = await supabase.from('profiles').select('username').eq('id', user.id).single();
     if (me) setMyUsername(me.username);
 
-    // All requests involving me
     const { data: reqs } = await supabase
       .from('friend_requests')
       .select('id, from_user_id, to_user_id, status')
@@ -60,26 +71,22 @@ export function FriendsView() {
 
     const profileMap: Record<string, Profile> = {};
     if (ids.size > 0) {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, username')
-        .in('id', [...ids]);
+      const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', [...ids]);
       profiles?.forEach((p) => { profileMap[p.id] = p; });
     }
 
-    const accepted: Profile[]    = [];
-    const inReqs:  PendingIn[]   = [];
-    const outReqs: PendingOut[]  = [];
+    const accepted: Profile[]   = [];
+    const inReqs:  PendingIn[]  = [];
+    const outReqs: PendingOut[] = [];
 
     reqs.forEach((r) => {
       const otherId = r.from_user_id === user.id ? r.to_user_id : r.from_user_id;
       const other   = profileMap[otherId];
       if (!other) return;
-      if (r.status === 'accepted') {
-        accepted.push(other);
-      } else if (r.status === 'pending') {
-        if (r.to_user_id === user.id)   inReqs.push({ requestId: r.id, from: other });
-        else                            outReqs.push({ requestId: r.id, to: other });
+      if (r.status === 'accepted') accepted.push(other);
+      else if (r.status === 'pending') {
+        if (r.to_user_id === user.id) inReqs.push({ requestId: r.id, from: other });
+        else                          outReqs.push({ requestId: r.id, to: other });
       }
     });
 
@@ -87,22 +94,34 @@ export function FriendsView() {
     setPendingIn(inReqs);
     setPendingOut(outReqs);
     setLoading(false);
+
+    // Fetch collections for accepted friends
+    if (accepted.length > 0) {
+      const { data: cols } = await supabase
+        .from('collections')
+        .select('user_id, copies')
+        .in('user_id', accepted.map((f) => f.id));
+      const map: Record<string, CollectionData | null> = {};
+      accepted.forEach((f) => {
+        const row = cols?.find((c) => c.user_id === f.id);
+        if (!row) { map[f.id] = null; return; }
+        const raw = row.copies;
+        map[f.id] = raw && typeof raw === 'object' && 'copies' in (raw as object)
+          ? raw as CollectionData
+          : null;
+      });
+      setFriendCollections(map);
+    }
   }, [user]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // Search by username
   useEffect(() => {
     if (!user || search.length < 2) { setSearchResults([]); return; }
     const timer = setTimeout(async () => {
       setSearchLoading(true);
       const supabase = createClient();
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, username')
-        .ilike('username', `%${search}%`)
-        .neq('id', user.id)
-        .limit(5);
+      const { data } = await supabase.from('profiles').select('id, username').ilike('username', `%${search}%`).neq('id', user.id).limit(5);
       setSearchResults(data ?? []);
       setSearchLoading(false);
     }, 300);
@@ -114,18 +133,14 @@ export function FriendsView() {
     setActionLoading(toId);
     const supabase = createClient();
     await supabase.from('friend_requests').insert({ from_user_id: user.id, to_user_id: toId });
-    setSearch('');
-    setSearchResults([]);
-    setActionLoading(null);
-    loadData();
+    setSearch(''); setSearchResults([]); setActionLoading(null); loadData();
   };
 
   const respond = async (requestId: string, accept: boolean) => {
     setActionLoading(requestId);
     const supabase = createClient();
     await supabase.from('friend_requests').update({ status: accept ? 'accepted' : 'rejected' }).eq('id', requestId);
-    setActionLoading(null);
-    loadData();
+    setActionLoading(null); loadData();
   };
 
   const removeFriend = async (friendId: string) => {
@@ -134,21 +149,18 @@ export function FriendsView() {
     const supabase = createClient();
     await supabase.from('friend_requests').delete()
       .or(`and(from_user_id.eq.${user.id},to_user_id.eq.${friendId}),and(from_user_id.eq.${friendId},to_user_id.eq.${user.id})`);
-    setActionLoading(null);
-    loadData();
+    setActionLoading(null); loadData();
   };
 
   const cancelRequest = async (requestId: string) => {
     setActionLoading(requestId);
     const supabase = createClient();
     await supabase.from('friend_requests').delete().eq('id', requestId);
-    setActionLoading(null);
-    loadData();
+    setActionLoading(null); loadData();
   };
 
-  // Already sent / already friends check
-  const sentIds    = new Set(pendingOut.map((r) => r.to.id));
-  const friendIds  = new Set(friends.map((f) => f.id));
+  const sentIds   = new Set(pendingOut.map((r) => r.to.id));
+  const friendIds = new Set(friends.map((f) => f.id));
 
   if (loading) {
     return (
@@ -176,46 +188,31 @@ export function FriendsView() {
       <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-5">
         <h2 className="font-bold text-gray-800 dark:text-gray-100 text-base mb-3">Ajouter un ami</h2>
         <div className="relative">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher par pseudo…"
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300"
-          />
-          {searchLoading && (
-            <span className="absolute right-3 top-2.5 text-xs text-gray-400">…</span>
-          )}
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300" />
+          {searchLoading && <span className="absolute right-3 top-2.5 text-xs text-gray-400">…</span>}
         </div>
-
         {searchResults.length > 0 && (
           <div className="mt-2 space-y-1.5">
-            {searchResults.map((p) => {
-              const isFriend  = friendIds.has(p.id);
-              const isPending = sentIds.has(p.id);
-              return (
-                <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-                  <Avatar username={p.username} size="sm" />
-                  <span className="flex-1 text-sm font-semibold text-gray-700 dark:text-gray-200">@{p.username}</span>
-                  {isFriend ? (
-                    <span className="text-xs text-green-600 dark:text-green-400 font-semibold">Déjà ami</span>
-                  ) : isPending ? (
-                    <span className="text-xs text-gray-400 font-semibold">Demande envoyée</span>
-                  ) : (
-                    <button
-                      onClick={() => sendRequest(p.id)}
-                      disabled={actionLoading === p.id}
-                      className="text-xs font-semibold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-1 rounded-lg transition-colors"
-                    >
-                      {actionLoading === p.id ? '…' : 'Ajouter'}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+            {searchResults.map((p) => (
+              <div key={p.id} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                <Avatar username={p.username} size="sm" />
+                <span className="flex-1 text-sm font-semibold text-gray-700 dark:text-gray-200">@{p.username}</span>
+                {friendIds.has(p.id) ? (
+                  <span className="text-xs text-green-600 dark:text-green-400 font-semibold">Déjà ami</span>
+                ) : sentIds.has(p.id) ? (
+                  <span className="text-xs text-gray-400 font-semibold">Demande envoyée</span>
+                ) : (
+                  <button onClick={() => sendRequest(p.id)} disabled={actionLoading === p.id}
+                    className="text-xs font-semibold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-1 rounded-lg transition-colors">
+                    {actionLoading === p.id ? '…' : 'Ajouter'}
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
         )}
-
         {search.length >= 2 && !searchLoading && searchResults.length === 0 && (
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 italic">Aucun utilisateur trouvé.</p>
         )}
@@ -233,18 +230,12 @@ export function FriendsView() {
               <div key={req.requestId} className="flex items-center gap-3">
                 <Avatar username={req.from.username} size="sm" />
                 <span className="flex-1 text-sm font-semibold text-gray-700 dark:text-gray-200">@{req.from.username}</span>
-                <button
-                  onClick={() => respond(req.requestId, true)}
-                  disabled={actionLoading === req.requestId}
-                  className="text-xs font-semibold bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1 rounded-lg transition-colors"
-                >
+                <button onClick={() => respond(req.requestId, true)} disabled={actionLoading === req.requestId}
+                  className="text-xs font-semibold bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-3 py-1 rounded-lg transition-colors">
                   Accepter
                 </button>
-                <button
-                  onClick={() => respond(req.requestId, false)}
-                  disabled={actionLoading === req.requestId}
-                  className="text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 px-2 py-1 rounded-lg transition-colors"
-                >
+                <button onClick={() => respond(req.requestId, false)} disabled={actionLoading === req.requestId}
+                  className="text-xs font-semibold text-gray-500 dark:text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg transition-colors">
                   Refuser
                 </button>
               </div>
@@ -256,18 +247,15 @@ export function FriendsView() {
       {/* Demandes envoyées */}
       {pendingOut.length > 0 && (
         <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-5">
-          <h2 className="font-bold text-gray-800 dark:text-gray-100 text-base mb-3 text-sm">Demandes envoyées</h2>
+          <h2 className="font-bold text-gray-800 dark:text-gray-100 text-base mb-2 text-sm">Demandes envoyées</h2>
           <div className="space-y-2">
             {pendingOut.map((req) => (
               <div key={req.requestId} className="flex items-center gap-3">
                 <Avatar username={req.to.username} size="sm" />
                 <span className="flex-1 text-sm font-semibold text-gray-700 dark:text-gray-200">@{req.to.username}</span>
                 <span className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold mr-1">En attente</span>
-                <button
-                  onClick={() => cancelRequest(req.requestId)}
-                  disabled={actionLoading === req.requestId}
-                  className="text-[10px] text-red-400 hover:text-red-600 border border-red-200 dark:border-red-800 rounded px-1.5 py-0.5 transition-colors disabled:opacity-50"
-                >
+                <button onClick={() => cancelRequest(req.requestId)} disabled={actionLoading === req.requestId}
+                  className="text-[10px] text-red-400 hover:text-red-600 border border-red-200 dark:border-red-800 rounded px-1.5 py-0.5 transition-colors disabled:opacity-50">
                   Annuler
                 </button>
               </div>
@@ -282,34 +270,59 @@ export function FriendsView() {
           Mes amis
           <span className="text-sm font-semibold text-gray-400 dark:text-gray-500">{friends.length}</span>
         </h2>
-
         {friends.length === 0 ? (
           <p className="text-sm text-gray-400 dark:text-gray-500 italic text-center py-4">
             Aucun ami pour l'instant — envoie une demande !
           </p>
         ) : (
           <div className="space-y-3">
-            {friends.map((f) => (
-              <div key={f.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/40">
-                <Avatar username={f.username} />
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm text-gray-800 dark:text-gray-100">@{f.username}</p>
-                  <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
-                    Stats de collection — bientôt disponibles
-                  </p>
+            {friends.map((f) => {
+              const col      = friendCollections[f.id];
+              const copies   = col?.copies ?? {};
+              const collected = Object.values(copies).filter((v) => v >= 1).length;
+              const pct      = col ? Math.round((collected / TOTAL_BASE) * 100) : null;
+              const hasData  = col !== null && col !== undefined;
+
+              return (
+                <div key={f.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/40">
+                  <Avatar username={f.username} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm text-gray-800 dark:text-gray-100">@{f.username}</p>
+                    {hasData && pct !== null ? (
+                      <MiniProgress pct={pct} />
+                    ) : (
+                      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
+                        {col === undefined ? 'Chargement…' : 'Collection non synchronisée'}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => setSelectedFriend(f)}
+                      className="w-7 h-7 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold flex items-center justify-center transition-colors"
+                      title="Voir les détails"
+                    >
+                      +
+                    </button>
+                    <button onClick={() => removeFriend(f.id)} disabled={actionLoading === f.id}
+                      className="text-[10px] text-red-400 hover:text-red-600 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded px-1.5 py-0.5 transition-colors disabled:opacity-50">
+                      Retirer
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => removeFriend(f.id)}
-                  disabled={actionLoading === f.id}
-                  className="text-[10px] text-red-400 hover:text-red-600 dark:hover:text-red-300 border border-red-200 dark:border-red-800 rounded px-1.5 py-0.5 transition-colors disabled:opacity-50 shrink-0"
-                >
-                  Retirer
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
+
+      {selectedFriend && (
+        <FriendDetailModal
+          friend={selectedFriend}
+          collection={friendCollections[selectedFriend.id] ?? null}
+          onClose={() => setSelectedFriend(null)}
+        />
+      )}
 
     </main>
   );
