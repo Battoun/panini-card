@@ -160,7 +160,7 @@ export function AlbumView() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen w-full">
+    <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
       <StatsBar collected={stats.collected} collectedBase={collectedBase} doubles={stats.doubles} totalDoubles={stats.totalDoubles} />
 
       {/* Onglets navigation */}
@@ -235,7 +235,7 @@ export function AlbumView() {
         onCompare={() => setShowCompare(true)}
       />}
 
-      {tab === 'album' && <main className="max-w-7xl mx-auto px-1 sm:px-4 py-4 flex-1 overflow-x-hidden">
+      {tab === 'album' && <main className="w-full max-w-7xl mx-auto px-1 sm:px-4 py-4 flex-1 overflow-x-hidden">
         {/* Vignettes spéciales */}
         {showSpecial && filteredSpecial.length > 0 && (
           <section className="mb-8">
