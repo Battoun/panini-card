@@ -1,6 +1,6 @@
 # Panini WC 2026 – Mes doubles
 
-Application web pour suivre sa collection de vignettes Panini FIFA World Cup 2026 (édition officielle). Permet de tracker les vignettes collées, les doubles, et d'analyser sa progression.
+Application web pour suivre sa collection de vignettes Panini FIFA World Cup 2026 (édition officielle). Synchronisée dans le cloud, accessible depuis n'importe quel appareil.
 
 ## Fonctionnalités
 
@@ -8,56 +8,71 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 - **992 vignettes** : 20 vignettes spéciales FWC, 960 vignettes équipes (48 équipes × 20), 12 vignettes exclusives Coca-Cola
 - **48 équipes** organisées par groupe (A à L) dans l'ordre de l'album
 - Incrémentation / décrémentation du nombre de copies par vignette
+- **Confirmation avant décrémentation à zéro** — évite les fausses manips
 - **Saisie rapide par lot** — tape plusieurs IDs d'un coup (`FRA3 BRA7 ARG12`) pour enregistrer tout un paquet en quelques secondes
-- **Échange complet** — dans la saisie rapide, saisir les vignettes reçues (ajoutées) et les vignettes données (retirées), avec avertissement si tu donnes une vignette dont tu n'as pas de double
-- **Filtres** : Toutes / Manquantes / Collées / Doubles / 🎯 Presque — affiche uniquement les équipes à 90%+ avec leurs vignettes manquantes
+- **Échange complet** — dans la saisie rapide, saisir les vignettes reçues et données, avec avertissement si tu donnes une vignette dont tu n'as pas de double
+- **Filtres** : Toutes / Manquantes / Collées / Doubles / 🎯 Presque — équipes à 90%+ avec leurs vignettes manquantes
 - **Recherche** par nom de joueur, numéro ou équipe
 - **Filtre par équipe** avec menu déroulant groupé par poule
-- **Barre de progression par groupe** — taux de complétion affiché dans chaque header de groupe (A–L) pour voir d'un coup d'œil les groupes bien avancés
-- **Confirmation avant décrémentation à zéro** — demande de confirmation si tu retires la dernière copie d'une vignette, pour éviter les fausses manips
+- **Barre de progression par groupe** — taux de complétion dans chaque header de groupe A–L
+- **Badge ✓ Complète** + toast de célébration quand une équipe atteint 100%
 
 ### Statistiques
 - Suivi du nombre de paquets ouverts (1 paquet = 7 vignettes = 1,50 €)
 - Calcul automatique du budget dépensé et coût moyen par vignette collée
-- Barre de progression de l'album (% de complétion)
+- **3 barres de progression** : standards (980), Coca-Cola (12), total (992)
 - Top 5 / Flop 5 équipes par taux de complétion
 - Top 3 équipes avec le plus de doubles
 - Liste des vignettes en triple ou plus
-- **Équipes complètes** — section dédiée listant toutes les équipes à 100%, avec badge vert dans l'album et toast de célébration au moment où tu colles la dernière vignette d'une équipe
+- **Équipes complètes** — section dédiée avec toutes les équipes à 100%
+- **Échanges effectués** — compteurs cartes données / reçues, modifiables manuellement
+- **Historique des échanges** — 20 derniers échanges avec bouton Annuler (remet les cartes en place)
+
+### Échanges
+- **Mode comparaison** — colle le JSON d'un ami pour voir ce qu'il peut te donner et ce que tu peux lui donner
+- Sélection manuelle ou **aléatoire** de la paire de cartes à échanger
+- Validation : vérifie que tu as bien un double à donner et que tu n'as pas encore la carte à recevoir
+- **Historique persisté** — les 5 derniers échanges dans la comparaison, annulables
+
+### Compte & synchronisation
+- **Inscription** avec email, mot de passe et pseudo (unique, visible par les amis)
+- **Connexion** sécurisée via Supabase Auth
+- **Collection synchronisée dans le cloud** — retrouve exactement la même collection sur tous tes appareils en te connectant
+- **Sauvegarde manuelle** — bouton dans Exporter / Partager → Sauvegarder pour forcer la mise en base
+- **Page de profil** — pseudo, email, date d'inscription, déconnexion
+
+### Amis
+- **Recherche d'amis** par pseudo
+- **Demandes d'amis** — envoi, acceptation, refus, annulation
+- **Progression de ses amis** — barre de complétion visible directement sur la carte de chaque ami
+- **Détail d'un ami** — modal avec % global, équipes complètes, top 5 équipes, nombre de doubles
+- Bientôt : demandes d'échange directement entre amis
 
 ### Export / Import
 - Export de la liste des doubles (texte lisible)
-- **Lien de partage + QR code** — génère un lien encodé et un QR code à scanner ; la personne qui ouvre le lien voit directement ta liste de doubles disponibles
-- **Mode comparaison** — bouton "🔄 Comparer" dans la barre de filtres : colle le JSON d'un ami pour voir instantanément ce qu'il peut te donner (ses doubles qu'il te manquent) et ce que tu peux lui donner (tes doubles qu'il n'a pas), groupés par équipe
-- Export de la liste des manquantes groupée par équipe, prête à copier-coller pour les échanges
-- Sauvegarde de la collection complète en JSON
+- **Lien de partage + QR code** — génère un lien encodé et un QR code à scanner
+- Export de la liste des manquantes groupée par équipe
+- Sauvegarde de la collection complète en JSON (local)
 - Restauration depuis un fichier JSON
 - Remise à zéro de la collection
 
 ### Interface
-- **Thème clair / sombre** — toggle dans le header pour basculer entre mode clair et mode sombre, avec détection automatique des préférences système et sauvegarde de la préférence
+- **Thème clair / sombre** — toggle dans le header avec détection automatique des préférences système
+- **Design responsive** — optimisé mobile (5 cartes par ligne, header pleine largeur, viewport meta)
 
 ## Améliorations futures
 
-### Système d'échanges (v2)
-Refonte complète du système d'échanges pour le rendre plus pratique et fiable :
-- **Persistance cloud** — aujourd'hui l'historique vit dans le `localStorage` du navigateur et disparaît si on change d'appareil ; le migrer vers une base de données (Supabase) pour l'avoir partout
-- **Échanges multi-cartes** — permettre de valider un échange de N-pour-N cartes en une seule transaction plutôt que carte par carte
-- **Statuts d'échange** — proposer / accepter / refuser un échange avec un ami (flux de confirmation des deux côtés)
-- **Notifications** — recevoir une alerte quand un ami propose un échange ou qu'un accord est en attente
-
-### Comptes & communauté
-Passage d'une app 100 % locale à une plateforme avec backend :
-- **Création de compte** — authentification via Supabase (email/mot de passe ou OAuth Google/GitHub) pour synchroniser sa collection sur tous ses appareils
-- **Système d'amis** — ajouter des amis par pseudo ou lien d'invitation, voir leur collection en temps réel
-- **Page Amis** *(onglet déjà réservé dans la nav)* — tableau de bord listant tous ses amis, leur progression, et les échanges possibles calculés automatiquement sans avoir à échanger de fichiers JSON
-- **Matching d'échanges automatique** — détection en temps réel de "X a ce qu'il te manque et tu as ce qu'il lui manque" parmi tous ses amis en même temps
+- **Demandes d'échange entre amis** — proposer / accepter / refuser un échange directement depuis la page Amis
+- **Matching automatique** — détection en temps réel des échanges possibles parmi tous ses amis
+- **Notifications** — alerte quand un ami envoie une demande d'ami ou d'échange
+- **Suppression de compte**
 
 ## Stack technique
 
 - [Next.js](https://nextjs.org) (App Router) + TypeScript
 - [Tailwind CSS](https://tailwindcss.com) v4
-- Persistance via `localStorage` (aucun backend requis)
+- [Supabase](https://supabase.com) — Auth + base de données PostgreSQL (collection cloud, profils, amis)
+- Persistance locale via `localStorage` (cache) + synchronisation cloud
 
 ## Lancer en local
 
@@ -67,3 +82,12 @@ npm run dev
 ```
 
 Ouvre [http://localhost:3000](http://localhost:3000) dans ton navigateur.
+
+### Variables d'environnement requises
+
+Crée un fichier `.env.local` à la racine :
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
