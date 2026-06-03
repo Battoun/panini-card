@@ -15,22 +15,10 @@ const AVATAR_COLORS = ['bg-blue-500','bg-violet-500','bg-emerald-500','bg-orange
 
 function Avatar({ username, size = 'md' }: { username: string; size?: 'sm' | 'md' | 'lg' }) {
   const color = AVATAR_COLORS[username.charCodeAt(0) % AVATAR_COLORS.length];
-  const cls   = size === 'lg' ? 'w-12 h-12 text-base' : size === 'sm' ? 'w-8 h-8 text-xs' : 'w-10 h-10 text-sm';
+  const cls   = size === 'lg' ? 'w-14 h-14 text-lg' : size === 'sm' ? 'w-9 h-9 text-sm' : 'w-11 h-11 text-sm';
   return (
-    <div className={`${cls} ${color} rounded-full flex items-center justify-center text-white font-black shrink-0 shadow-sm`}>
+    <div className={`${cls} ${color} rounded-full flex items-center justify-center text-white font-black shrink-0`}>
       {username.slice(0, 2).toUpperCase()}
-    </div>
-  );
-}
-
-function ProgressBar({ pct }: { pct: number }) {
-  const color = pct === 100 ? 'bg-green-500' : pct >= 75 ? 'bg-blue-500' : pct >= 40 ? 'bg-yellow-400' : 'bg-gray-400';
-  return (
-    <div className="flex items-center gap-2 mt-1">
-      <div className="flex-1 h-1 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-        <div className={`h-full ${color} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
-      </div>
-      <span className={`text-[11px] font-bold shrink-0 ${pct === 100 ? 'text-green-500' : 'text-gray-400 dark:text-gray-500'}`}>{pct}%</span>
     </div>
   );
 }
@@ -152,48 +140,49 @@ export function FriendsView() {
 
   if (loading) {
     return (
-      <main className="max-w-lg mx-auto px-4 py-6 flex-1">
-        <div className="space-y-3">
-          {[1,2,3].map((i) => (
-            <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800/60 rounded-2xl animate-pulse" />
-          ))}
-        </div>
+      <main className="max-w-2xl mx-auto px-4 py-8 flex-1 space-y-4">
+        {[1,2,3].map((i) => <div key={i} className="h-20 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse" />)}
       </main>
     );
   }
 
   return (
-    <main className="max-w-lg mx-auto px-4 py-5 flex-1 space-y-6">
+    <main className="max-w-2xl mx-auto px-4 py-6 flex-1 space-y-8">
 
       {/* Mon profil */}
-      <div className="flex items-center gap-3 px-1">
+      <div className="flex items-center gap-4 bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
         <Avatar username={myUsername || '?'} size="lg" />
         <div>
-          <p className="font-black text-gray-900 dark:text-white text-base leading-tight">@{myUsername}</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{user?.email}</p>
+          <p className="font-black text-gray-900 dark:text-white text-lg leading-tight">@{myUsername}</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{user?.email}</p>
         </div>
       </div>
 
       {/* Demandes reçues */}
       {pendingIn.length > 0 && (
-        <section>
-          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">
-            Demandes reçues
-            <span className="ml-2 bg-blue-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full">{pendingIn.length}</span>
-          </p>
-          <div className="space-y-2">
+        <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-blue-100 dark:border-blue-900/50 overflow-hidden">
+          <div className="px-5 py-4 border-b border-blue-50 dark:border-blue-900/30 flex items-center gap-2">
+            <h2 className="font-bold text-gray-800 dark:text-gray-100 text-base">Demandes reçues</h2>
+            <span className="bg-blue-600 text-white text-xs font-black w-5 h-5 rounded-full flex items-center justify-center">{pendingIn.length}</span>
+          </div>
+          <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
             {pendingIn.map((req) => (
-              <div key={req.requestId} className="flex items-center gap-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-2xl px-4 py-3">
-                <Avatar username={req.from.username} size="sm" />
-                <span className="flex-1 text-sm font-bold text-gray-800 dark:text-gray-100">@{req.from.username}</span>
-                <button onClick={() => respond(req.requestId, true)} disabled={actionLoading === req.requestId}
-                  className="text-xs font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-xl transition-colors">
-                  Accepter
-                </button>
-                <button onClick={() => respond(req.requestId, false)} disabled={actionLoading === req.requestId}
-                  className="text-xs font-semibold text-gray-400 hover:text-red-500 transition-colors px-1">
-                  ✕
-                </button>
+              <div key={req.requestId} className="flex items-center gap-4 px-5 py-4">
+                <Avatar username={req.from.username} />
+                <div className="flex-1">
+                  <p className="font-bold text-gray-800 dark:text-gray-100">@{req.from.username}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">veut être ton ami</p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => respond(req.requestId, true)} disabled={actionLoading === req.requestId}
+                    className="text-sm font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors">
+                    Accepter
+                  </button>
+                  <button onClick={() => respond(req.requestId, false)} disabled={actionLoading === req.requestId}
+                    className="text-sm font-semibold text-gray-400 hover:text-red-500 dark:hover:text-red-400 border border-gray-200 dark:border-gray-600 px-3 py-2 rounded-xl transition-colors">
+                    Non
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -201,54 +190,62 @@ export function FriendsView() {
       )}
 
       {/* Recherche */}
-      <section>
-        <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">Ajouter un ami</p>
-        <div className="relative">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
-          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher par pseudo…"
-            className="w-full pl-9 pr-4 py-3 rounded-2xl bg-gray-100 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border-0 focus:outline-none focus:ring-2 focus:ring-blue-400" />
-          {searchLoading && <span className="absolute right-4 top-3 text-xs text-gray-400">…</span>}
+      <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-50 dark:border-gray-700/50">
+          <h2 className="font-bold text-gray-800 dark:text-gray-100 text-base">Ajouter un ami</h2>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Recherche par pseudo exact</p>
         </div>
-
-        {searchResults.length > 0 && (
-          <div className="mt-2 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
-            {searchResults.map((p, i) => (
-              <div key={p.id} className={`flex items-center gap-3 px-4 py-3 ${i > 0 ? 'border-t border-gray-50 dark:border-gray-700/50' : ''}`}>
-                <Avatar username={p.username} size="sm" />
-                <span className="flex-1 text-sm font-bold text-gray-800 dark:text-gray-100">@{p.username}</span>
-                {friendIds.has(p.id) ? (
-                  <span className="text-xs text-green-600 dark:text-green-400 font-semibold">✓ Ami</span>
-                ) : sentIds.has(p.id) ? (
-                  <span className="text-xs text-gray-400 font-semibold">Envoyée</span>
-                ) : (
-                  <button onClick={() => sendRequest(p.id)} disabled={actionLoading === p.id}
-                    className="text-xs font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-xl transition-colors">
-                    {actionLoading === p.id ? '…' : '+ Ajouter'}
-                  </button>
-                )}
-              </div>
-            ))}
+        <div className="px-5 py-4">
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+              placeholder="Pseudo…"
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 text-sm text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 border border-gray-100 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            {searchLoading && <span className="absolute right-4 top-3.5 text-sm text-gray-400">…</span>}
           </div>
-        )}
-        {search.length >= 2 && !searchLoading && searchResults.length === 0 && (
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 px-1 italic">Aucun utilisateur trouvé pour « {search} »</p>
-        )}
+          {searchResults.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {searchResults.map((p) => (
+                <div key={p.id} className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700/60 rounded-xl px-4 py-3">
+                  <Avatar username={p.username} size="sm" />
+                  <span className="flex-1 font-bold text-gray-800 dark:text-gray-100 text-sm">@{p.username}</span>
+                  {friendIds.has(p.id) ? (
+                    <span className="text-xs text-green-600 dark:text-green-400 font-bold">✓ Ami</span>
+                  ) : sentIds.has(p.id) ? (
+                    <span className="text-xs text-gray-400 font-semibold">Demande envoyée</span>
+                  ) : (
+                    <button onClick={() => sendRequest(p.id)} disabled={actionLoading === p.id}
+                      className="text-xs font-bold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-xl transition-colors">
+                      {actionLoading === p.id ? '…' : 'Ajouter'}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {search.length >= 2 && !searchLoading && searchResults.length === 0 && (
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-3 text-center">Aucun résultat pour « {search} »</p>
+          )}
+        </div>
       </section>
 
       {/* Demandes envoyées */}
       {pendingOut.length > 0 && (
-        <section>
-          <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">En attente</p>
-          <div className="space-y-2">
+        <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50 dark:border-gray-700/50">
+            <h2 className="font-bold text-gray-800 dark:text-gray-100 text-base">Demandes envoyées</h2>
+          </div>
+          <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
             {pendingOut.map((req) => (
-              <div key={req.requestId} className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/60 rounded-2xl px-4 py-3">
-                <Avatar username={req.to.username} size="sm" />
-                <span className="flex-1 text-sm font-bold text-gray-700 dark:text-gray-200">@{req.to.username}</span>
-                <span className="text-[10px] text-gray-400 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full font-semibold">En attente</span>
+              <div key={req.requestId} className="flex items-center gap-4 px-5 py-4">
+                <Avatar username={req.to.username} />
+                <div className="flex-1">
+                  <p className="font-bold text-gray-800 dark:text-gray-100">@{req.to.username}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">En attente de réponse…</p>
+                </div>
                 <button onClick={() => cancelRequest(req.requestId)} disabled={actionLoading === req.requestId}
-                  className="text-[11px] text-gray-400 hover:text-red-500 transition-colors ml-1 disabled:opacity-50">
-                  ✕
+                  className="text-xs font-semibold text-red-400 hover:text-red-600 border border-red-200 dark:border-red-800 px-3 py-2 rounded-xl transition-colors disabled:opacity-50">
+                  Annuler
                 </button>
               </div>
             ))}
@@ -257,48 +254,55 @@ export function FriendsView() {
       )}
 
       {/* Mes amis */}
-      <section>
-        <p className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-1">
-          Mes amis {friends.length > 0 && <span className="text-gray-500">· {friends.length}</span>}
-        </p>
+      <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-50 dark:border-gray-700/50 flex items-center justify-between">
+          <h2 className="font-bold text-gray-800 dark:text-gray-100 text-base">Mes amis</h2>
+          {friends.length > 0 && (
+            <span className="text-sm font-bold text-gray-400 dark:text-gray-500">{friends.length}</span>
+          )}
+        </div>
 
         {friends.length === 0 ? (
-          <div className="text-center py-10 text-gray-400 dark:text-gray-600">
-            <p className="text-3xl mb-2">👥</p>
-            <p className="text-sm">Aucun ami pour l'instant</p>
-            <p className="text-xs mt-1">Recherche un pseudo ci-dessus pour commencer</p>
+          <div className="text-center py-12 px-6">
+            <p className="text-4xl mb-3">👥</p>
+            <p className="font-semibold text-gray-500 dark:text-gray-400">Aucun ami pour l'instant</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Recherche un pseudo ci-dessus pour envoyer une demande</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="divide-y divide-gray-50 dark:divide-gray-700/50">
             {friends.map((f) => {
               const col       = friendCollections[f.id];
               const copies    = col?.copies ?? {};
               const collected = Object.values(copies).filter((v) => v >= 1).length;
               const pct       = col ? Math.round((collected / TOTAL_BASE) * 100) : null;
+              const barColor  = pct === 100 ? 'bg-green-500' : pct !== null && pct >= 75 ? 'bg-blue-500' : pct !== null && pct >= 40 ? 'bg-yellow-400' : 'bg-gray-300';
 
               return (
-                <div key={f.id}
-                  className="flex items-center gap-3 bg-white dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700/50 rounded-2xl px-4 py-3 shadow-sm"
-                >
+                <div key={f.id} className="flex items-center gap-4 px-5 py-4">
                   <Avatar username={f.username} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-gray-900 dark:text-white leading-tight">@{f.username}</p>
+                    <p className="font-bold text-gray-900 dark:text-white text-sm">@{f.username}</p>
                     {pct !== null ? (
-                      <ProgressBar pct={pct} />
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className={`h-full ${barColor} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-xs font-bold text-gray-500 dark:text-gray-400 shrink-0">{pct}%</span>
+                      </div>
                     ) : (
-                      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">
-                        {col === undefined ? '…' : 'Non synchronisé'}
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        {col === undefined ? 'Chargement…' : 'Collection non synchronisée'}
                       </p>
                     )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button onClick={() => setSelectedFriend(f)}
-                      className="w-8 h-8 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-base font-bold flex items-center justify-center transition-colors shadow-sm"
+                      className="w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-lg font-bold flex items-center justify-center transition-colors"
                       title="Voir les détails">
                       +
                     </button>
                     <button onClick={() => removeFriend(f.id)} disabled={actionLoading === f.id}
-                      className="text-gray-300 dark:text-gray-600 hover:text-red-400 dark:hover:text-red-400 transition-colors text-sm disabled:opacity-40"
+                      className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500 dark:hover:text-red-400 flex items-center justify-center transition-colors text-sm disabled:opacity-40"
                       title="Retirer">
                       ✕
                     </button>
