@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { CollectionData } from '../types';
 import { TOTAL_BASE } from '../data/album';
 import { FriendDetailModal } from './FriendDetailModal';
+import { useCollection } from '../hooks/useCollection';
 
 interface Profile { id: string; username: string }
 interface PendingIn  { requestId: string; from: Profile }
@@ -25,6 +26,7 @@ function Avatar({ username, size = 'md' }: { username: string; size?: 'sm' | 'md
 
 export function FriendsView() {
   const { user } = useAuth();
+  const { copies: myCopies } = useCollection();
   const [search, setSearch]               = useState('');
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -318,6 +320,7 @@ export function FriendsView() {
         <FriendDetailModal
           friend={selectedFriend}
           collection={friendCollections[selectedFriend.id] ?? null}
+          myCopies={myCopies}
           onClose={() => setSelectedFriend(null)}
         />
       )}
