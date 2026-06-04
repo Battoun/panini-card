@@ -32,6 +32,15 @@ export interface ExchangeHistoryItem {
   receiveDisplayId: string;
 }
 
+export type RareRarity = 'regular' | 'bronze' | 'silver' | 'gold';
+
+export interface RareCards {
+  regular: number;
+  bronze:  number;
+  silver:  number;
+  gold:    number;
+}
+
 export interface CollectionData {
   copies: Record<number, number>;
   packs: number;
@@ -39,4 +48,5 @@ export interface CollectionData {
   exchangeGiven?: number;
   exchangeReceived?: number;
   exchangeHistory?: ExchangeHistoryItem[];
+  rareCards?: RareCards;
 }

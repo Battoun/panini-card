@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CollectionData, ExchangeHistoryItem } from '../types';
+import { CollectionData, ExchangeHistoryItem, RareRarity } from '../types';
 import { useAuth } from './useAuth';
 import { createClient } from '../lib/supabase/client';
 
@@ -248,6 +248,14 @@ export function useCollection() {
     }
   }, []);
 
+  const setRareCard = useCallback((rarity: RareRarity, count: number) => {
+    setData((prev) => ({
+      ...prev,
+      rareCards: { regular: 0, bronze: 0, silver: 0, gold: 0, ...(prev.rareCards ?? {}), [rarity]: Math.max(0, count) },
+      lastUpdated: new Date().toISOString(),
+    }));
+  }, []);
+
   const exportData = useCallback((): string => JSON.stringify(data, null, 2), [data]);
 
   const refresh = useCallback(async () => {
@@ -291,6 +299,7 @@ export function useCollection() {
     saveNow,
     syncStatus,
     refresh,
+    setRareCard,
     importData,
     exportData,
     resetAll,
@@ -300,5 +309,6 @@ export function useCollection() {
     exchangeGiven:    data.exchangeGiven    ?? 0,
     exchangeReceived: data.exchangeReceived ?? 0,
     exchangeHistory:  data.exchangeHistory  ?? [],
+    rareCards: data.rareCards ?? { regular: 0, bronze: 0, silver: 0, gold: 0 },
   };
 }

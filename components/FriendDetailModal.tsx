@@ -2,9 +2,11 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { ALL_STICKERS, TOTAL_BASE, TOTAL_STICKERS, TEAMS, STICKERS_BY_TEAM, GROUPS } from '../data/album';
-import { CollectionData } from '../types';
+import { CollectionData, RareCards } from '../types';
 import { createClient } from '../lib/supabase/client';
 import { useAuth } from '../hooks/useAuth';
+
+const EMPTY_RARE: RareCards = { regular: 0, bronze: 0, silver: 0, gold: 0 };
 
 interface Profile { id: string; username: string }
 interface StickerItem    { id: number; displayId: string; name: string }
@@ -23,6 +25,7 @@ interface Props {
   collection: CollectionData | null;
   myCopies: Record<number, number>;
   myPacks: number;
+  myRareCards: RareCards;
   onClose: () => void;
   onCollectionUpdated?: () => void;
 }
@@ -64,7 +67,7 @@ function getStats(copies: Record<number, number>, packs: number) {
   return { collected, totalDoubles, pctBase, missing, packs, spent, costPerCard, completedTeams };
 }
 
-export function FriendDetailModal({ friend, collection, myCopies, myPacks, onClose, onCollectionUpdated }: Props) {
+export function FriendDetailModal({ friend, collection, myCopies, myPacks, myRareCards, onClose, onCollectionUpdated }: Props) {
   const { user } = useAuth();
   const [tab, setTab]                 = useState<Tab>('stats');
   const [selectedGive, setSelectedGive]     = useState<string | null>(null);
@@ -220,6 +223,25 @@ export function FriendDetailModal({ friend, collection, myCopies, myPacks, onClo
                       <CompareRow label="Coût / vignette" myVal={myStats.costPerCard} friendVal={friendStats.costPerCard} format={(v) => `${v} €`} higherIsBetter={false} />}
                   </>}
                 </div>
+
+                {/* Cartes rares */}
+                {(() => {
+                  const fr = collection.rareCards ?? EMPTY_RARE;
+                  const total = (myRareCards.regular + myRareCards.bronze + myRareCards.silver + myRareCards.gold);
+                  const ftotal = (fr.regular + fr.bronze + fr.silver + fr.gold);
+                  if (total === 0 && ftotal === 0) return null;
+                  return (
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide pt-1">✦ Cartes rares</p>
+                      <CompareRow label="Total rares"  myVal={total}                  friendVal={ftotal}              format={(v) => String(v)} higherIsBetter />
+                      <CompareRow label="⚪ Regular"   myVal={myRareCards.regular}    friendVal={fr.regular}          format={(v) => String(v)} higherIsBetter />
+                      <CompareRow label="🥉 Bronze"    myVal={myRareCards.bronze}     friendVal={fr.bronze}           format={(v) => String(v)} higherIsBetter />
+                      <CompareRow label="🥈 Argent"    myVal={myRareCards.silver}     friendVal={fr.silver}           format={(v) => String(v)} higherIsBetter />
+                      <CompareRow label="🥇 Or"        myVal={myRareCards.gold}       friendVal={fr.gold}             format={(v) => String(v)} higherIsBetter />
+                    </div>
+                  );
+                })()}
+
                 <WinnerBanner myStats={myStats} friendStats={friendStats} friendUsername={friend.username} />
               </>
             )

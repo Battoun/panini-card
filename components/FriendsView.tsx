@@ -26,7 +26,7 @@ function Avatar({ username, size = 'md' }: { username: string; size?: 'sm' | 'md
 
 export function FriendsView() {
   const { user } = useAuth();
-  const { copies: myCopies, packs: myPacks, refresh: refreshCollection } = useCollection();
+  const { copies: myCopies, packs: myPacks, rareCards: myRareCards, refresh: refreshCollection } = useCollection();
   const [search, setSearch]               = useState('');
   const [searchResults, setSearchResults] = useState<Profile[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -322,6 +322,7 @@ export function FriendsView() {
           collection={friendCollections[selectedFriend.id] ?? null}
           myCopies={myCopies}
           myPacks={myPacks}
+          myRareCards={myRareCards}
           onClose={() => setSelectedFriend(null)}
           onCollectionUpdated={refreshCollection}
         />

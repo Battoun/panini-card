@@ -17,12 +17,13 @@ import { CompletionToast, ToastItem } from './CompletionToast';
 import { ComparePanel } from './ComparePanel';
 import { FriendsView } from './FriendsView';
 import { AuthModal } from './AuthModal';
+import { RareCardsSection } from './RareCardsSection';
 import { decodeDoubles } from '../utils/share';
 
 type Tab = 'album' | 'stats' | 'friends';
 
 export function AlbumView() {
-  const { copies, hydrated, increment, decrement, setPacks, packs, importData, exportData, resetAll, stats, recordBatchExchange, recordExchange, undoExchange, setExchangeGiven, setExchangeReceived, exchangeGiven, exchangeReceived, exchangeHistory, saveNow } = useCollection();
+  const { copies, hydrated, increment, decrement, setPacks, packs, importData, exportData, resetAll, stats, recordBatchExchange, recordExchange, undoExchange, setExchangeGiven, setExchangeReceived, exchangeGiven, exchangeReceived, exchangeHistory, saveNow, setRareCard, rareCards } = useCollection();
   const { user, loading: authLoading } = useAuth();
   const [tab, setTab] = useState<Tab>('album');
   const [filter, setFilter] = useState<FilterStatus>('all');
@@ -354,7 +355,9 @@ export function AlbumView() {
           </section>
         )}
 
-        <p className="text-center text-xs text-gray-300 dark:text-gray-600 mt-8 mb-4">
+        <RareCardsSection rareCards={rareCards} onSet={setRareCard} />
+
+        <p className="text-center text-xs text-gray-300 dark:text-gray-600 mt-4 mb-4">
           {TOTAL_BASE} vignettes standards + {TOTAL_CC} Coca-Cola · 48 équipes · 12 groupes · FIFA World Cup 2026
         </p>
       </main>}
