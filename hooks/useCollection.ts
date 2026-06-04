@@ -250,6 +250,13 @@ export function useCollection() {
 
   const exportData = useCallback((): string => JSON.stringify(data, null, 2), [data]);
 
+  const refresh = useCallback(async () => {
+    if (!user) return;
+    const loaded = await loadFromSupabase(user.id);
+    justLoaded.current = true;
+    setData(loaded ?? EMPTY);
+  }, [user]);
+
   const resetAll = useCallback(() => {
     setData({ ...EMPTY, lastUpdated: new Date().toISOString() });
   }, []);
@@ -283,6 +290,7 @@ export function useCollection() {
     setExchangeReceived,
     saveNow,
     syncStatus,
+    refresh,
     importData,
     exportData,
     resetAll,

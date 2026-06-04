@@ -24,6 +24,7 @@ interface Props {
   myCopies: Record<number, number>;
   myPacks: number;
   onClose: () => void;
+  onCollectionUpdated?: () => void;
 }
 
 type Tab = 'stats' | 'compare' | 'exchanges' | 'pending';
@@ -63,7 +64,7 @@ function getStats(copies: Record<number, number>, packs: number) {
   return { collected, totalDoubles, pctBase, missing, packs, spent, costPerCard, completedTeams };
 }
 
-export function FriendDetailModal({ friend, collection, myCopies, myPacks, onClose }: Props) {
+export function FriendDetailModal({ friend, collection, myCopies, myPacks, onClose, onCollectionUpdated }: Props) {
   const { user } = useAuth();
   const [tab, setTab]                 = useState<Tab>('stats');
   const [selectedGive, setSelectedGive]     = useState<string | null>(null);
@@ -127,11 +128,26 @@ export function FriendDetailModal({ friend, collection, myCopies, myPacks, onClo
   const handleAction = async (req: ExchangeRequest, action: 'accepted' | 'rejected' | 'cancelled') => {
     setActionId(req.id);
     const supabase = createClient();
-    if (action === 'cancelled') {
+
+    if (action === 'accepted') {
+      // API route : met à jour les deux collections + statut + historique
+      const res = await fetch('/api/accept-exchange', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId: req.id }),
+      });
+      if (!res.ok) {
+        alert('Erreur lors de la validation de l\'échange.');
+        setActionId(null);
+        return;
+      }
+      onCollectionUpdated?.(); // rafraîchit la collection locale
+    } else if (action === 'cancelled') {
       await supabase.from('exchange_requests').delete().eq('id', req.id);
     } else {
       await supabase.from('exchange_requests').update({ status: action }).eq('id', req.id);
     }
+
     setActionId(null);
     loadRequests();
   };
