@@ -62,7 +62,7 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 
 ## Améliorations futures
 
-- **Validation d'échange entre amis** — proposer / accepter / refuser un échange directement depuis la page Amis, avec mise à jour des deux collections
+
 
 
 ## Stack technique

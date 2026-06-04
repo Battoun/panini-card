@@ -16,7 +16,7 @@ interface ExchangeRequest {
   from_user_id: string;
   give_display_id: string;
   recv_display_id: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled' | 'completed';
   created_at: string;
 }
 
@@ -101,7 +101,7 @@ export function FriendDetailModal({ friend, collection, myCopies, myPacks, myRar
       .from('exchange_requests')
       .select('*')
       .or(`and(from_user_id.eq.${user.id},to_user_id.eq.${friend.id}),and(from_user_id.eq.${friend.id},to_user_id.eq.${user.id})`)
-      .in('status', ['pending'])
+      .in('status', ['pending', 'accepted'])
       .order('created_at', { ascending: false });
     setRequests((data as ExchangeRequest[]) ?? []);
     setReqLoading(false);
@@ -128,23 +128,28 @@ export function FriendDetailModal({ friend, collection, myCopies, myPacks, myRar
     loadRequests();
   };
 
-  const handleAction = async (req: ExchangeRequest, action: 'accepted' | 'rejected' | 'cancelled') => {
+  const handleAction = async (req: ExchangeRequest, action: 'accepted' | 'rejected' | 'cancelled' | 'completed') => {
     setActionId(req.id);
     const supabase = createClient();
 
     if (action === 'accepted') {
-      // API route : met à jour les deux collections + statut + historique
       const res = await fetch('/api/accept-exchange', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ requestId: req.id }),
       });
-      if (!res.ok) {
-        alert('Erreur lors de la validation de l\'échange.');
-        setActionId(null);
-        return;
-      }
-      onCollectionUpdated?.(); // rafraîchit la collection locale
+      if (!res.ok) { alert('Erreur.'); setActionId(null); return; }
+
+    } else if (action === 'completed') {
+      // Met à jour les deux collections + historique
+      const res = await fetch('/api/complete-exchange', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ requestId: req.id }),
+      });
+      if (!res.ok) { alert('Erreur lors de la finalisation.'); setActionId(null); return; }
+      onCollectionUpdated?.();
+
     } else if (action === 'cancelled') {
       await supabase.from('exchange_requests').delete().eq('id', req.id);
     } else {
@@ -311,15 +316,28 @@ export function FriendDetailModal({ friend, collection, myCopies, myPacks, myRar
               <div className="space-y-3">
                 {requests.map((req) => {
                   const mine = isMine(req);
+                  const isAccepted = req.status === 'accepted';
+                  const cardBg = isAccepted
+                    ? 'border-green-100 dark:border-green-900/40 bg-green-50 dark:bg-green-900/10'
+                    : mine
+                      ? 'border-blue-100 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/10'
+                      : 'border-orange-100 dark:border-orange-900/40 bg-orange-50 dark:bg-orange-900/10';
                   return (
-                    <div key={req.id} className={`rounded-xl border p-4 space-y-3 ${mine ? 'border-blue-100 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/10' : 'border-orange-100 dark:border-orange-900/40 bg-orange-50 dark:bg-orange-900/10'}`}>
+                    <div key={req.id} className={`rounded-xl border p-4 space-y-3 ${cardBg}`}>
+                      {/* Badge statut */}
                       <div className="flex items-center justify-between">
-                        <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${mine ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400'}`}>
-                          {mine ? '📨 Envoyée' : '📬 Reçue'}
+                        <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                          isAccepted ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400'
+                          : mine ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400'
+                          : 'bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400'
+                        }`}>
+                          {isAccepted ? '✅ Accepté' : mine ? '📨 En attente' : '📬 Reçue'}
                         </span>
                         <span className="text-[10px] text-gray-400">{new Date(req.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-sm">
+
+                      {/* Cartes */}
+                      <div className="flex items-center gap-3">
                         <div className="flex-1 text-center">
                           <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">{mine ? 'Je donne' : 'Il donne'}</p>
                           <span className="font-mono font-black text-base text-orange-500 dark:text-orange-400">{req.give_display_id}</span>
@@ -330,20 +348,36 @@ export function FriendDetailModal({ friend, collection, myCopies, myPacks, myRar
                           <span className="font-mono font-black text-base text-green-600 dark:text-green-400">{req.recv_display_id}</span>
                         </div>
                       </div>
+
+                      {/* Actions */}
                       <div className="flex gap-2">
-                        {mine ? (
+                        {isAccepted && mine && (
+                          // Demandeur : peut terminer l'échange (après réception physique)
+                          <button onClick={() => handleAction(req, 'completed')} disabled={actionId === req.id}
+                            className="flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-bold transition-colors disabled:opacity-50">
+                            {actionId === req.id ? '…' : '🤝 Terminer l\'échange'}
+                          </button>
+                        )}
+                        {isAccepted && !mine && (
+                          // Destinataire : attend la confirmation du demandeur
+                          <p className="flex-1 text-center text-xs text-green-600 dark:text-green-400 font-semibold py-1.5">
+                            En attente de finalisation par l'expéditeur…
+                          </p>
+                        )}
+                        {!isAccepted && mine && (
                           <button onClick={() => handleAction(req, 'cancelled')} disabled={actionId === req.id}
-                            className="flex-1 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-red-500 dark:text-red-400 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50">
+                            className="flex-1 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-red-500 text-xs font-bold hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50">
                             Annuler
                           </button>
-                        ) : (
+                        )}
+                        {!isAccepted && !mine && (
                           <>
                             <button onClick={() => handleAction(req, 'accepted')} disabled={actionId === req.id}
                               className="flex-1 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-bold transition-colors disabled:opacity-50">
                               ✓ Accepter
                             </button>
                             <button onClick={() => handleAction(req, 'rejected')} disabled={actionId === req.id}
-                              className="flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 text-xs font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
+                              className="flex-1 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-500 text-xs font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50">
                               Refuser
                             </button>
                           </>
