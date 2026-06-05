@@ -69,10 +69,10 @@ function getStats(copies: Record<number, number>, packs: number) {
 
 export function FriendDetailModal({ friend, collection, myCopies, myPacks, myRareCards, onClose, onCollectionUpdated }: Props) {
   const { user } = useAuth();
-  const [tab, setTab]                 = useState<Tab>('stats');
-  const [selectedGive, setSelectedGive]     = useState<string | null>(null);
-  const [selectedRecv, setSelectedRecv]     = useState<string | null>(null);
-  const [proposing, setProposing]     = useState(false);
+  const [tab, setTab]           = useState<Tab>('stats');
+  const [selectedGive, setSelectedGive] = useState<string[]>([]);
+  const [selectedRecv, setSelectedRecv] = useState<string[]>([]);
+  const [proposing, setProposing] = useState(false);
   const [requests, setRequests]       = useState<ExchangeRequest[]>([]);
   const [reqLoading, setReqLoading]   = useState(false);
   const [actionId, setActionId]       = useState<string | null>(null);
@@ -111,18 +111,26 @@ export function FriendDetailModal({ friend, collection, myCopies, myPacks, myRar
 
   const pendingCount = requests.length;
 
+  const toggleGive = (id: string) =>
+    setSelectedGive((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+  const toggleRecv = (id: string) =>
+    setSelectedRecv((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
+
+  const pairCount = Math.min(selectedGive.length, selectedRecv.length);
+
   const proposeExchange = async () => {
-    if (!user || !selectedGive || !selectedRecv) return;
+    if (!user || pairCount === 0) return;
     setProposing(true);
     const supabase = createClient();
-    await supabase.from('exchange_requests').insert({
+    const rows = Array.from({ length: pairCount }, (_, i) => ({
       from_user_id:    user.id,
       to_user_id:      friend.id,
-      give_display_id: selectedGive,
-      recv_display_id: selectedRecv,
-    });
-    setSelectedGive(null);
-    setSelectedRecv(null);
+      give_display_id: selectedGive[i],
+      recv_display_id: selectedRecv[i],
+    }));
+    await supabase.from('exchange_requests').insert(rows);
+    setSelectedGive([]);
+    setSelectedRecv([]);
     setProposing(false);
     setTab('pending');
     loadRequests();
@@ -260,8 +268,7 @@ export function FriendDetailModal({ friend, collection, myCopies, myPacks, myRar
                 <SectionTitle color="text-green-600 dark:text-green-400" count={receiveCount}>↓ Il peut me donner</SectionTitle>
                 {receiveCount === 0 ? <Empty /> : canReceive.map(({ label, flag, items }) => (
                   <ChipGroup key={label} label={label} flag={flag} items={items}
-                    selected={selectedRecv} onSelect={(id) => setSelectedRecv(selectedRecv === id ? null : id)}
-                    color="green" />
+                    selected={selectedRecv} onSelect={toggleRecv} color="green" />
                 ))}
 
                 <hr className="border-gray-100 dark:border-gray-700" />
@@ -270,31 +277,44 @@ export function FriendDetailModal({ friend, collection, myCopies, myPacks, myRar
                 <SectionTitle color="text-orange-500 dark:text-orange-400" count={giveCount}>↑ Je peux lui donner</SectionTitle>
                 {giveCount === 0 ? <Empty /> : canGive.map(({ label, flag, items }) => (
                   <ChipGroup key={label} label={label} flag={flag} items={items}
-                    selected={selectedGive} onSelect={(id) => setSelectedGive(selectedGive === id ? null : id)}
-                    color="orange" />
+                    selected={selectedGive} onSelect={toggleGive} color="orange" />
                 ))}
 
                 {/* Proposer */}
-                {(selectedGive || selectedRecv) && (
+                {(selectedGive.length > 0 || selectedRecv.length > 0) && (
                   <div className="sticky bottom-0 bg-white dark:bg-gray-800 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-2">
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 text-xs space-y-1">
-                      <div className="flex gap-2">
-                        <span className="text-green-600 font-bold w-4">↓</span>
-                        <span className="font-mono font-bold text-gray-700 dark:text-gray-200">{selectedRecv ?? '—'}</span>
-                        <span className="text-gray-400">je reçois</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <span className="text-orange-500 font-bold w-4">↑</span>
-                        <span className="font-mono font-bold text-gray-700 dark:text-gray-200">{selectedGive ?? '—'}</span>
-                        <span className="text-gray-400">je donne</span>
-                      </div>
+                    {/* Résumé des paires */}
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-3 space-y-1.5 max-h-36 overflow-y-auto">
+                      {pairCount > 0 && Array.from({ length: pairCount }, (_, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs">
+                          <span className="text-[10px] font-bold text-gray-400 w-4 text-right shrink-0">{i + 1}</span>
+                          <span className="text-green-600 font-bold w-3">↓</span>
+                          <span className="font-mono font-bold text-gray-700 dark:text-gray-200 w-12 shrink-0">{selectedRecv[i]}</span>
+                          <span className="text-gray-300">·</span>
+                          <span className="text-orange-500 font-bold w-3">↑</span>
+                          <span className="font-mono font-bold text-gray-700 dark:text-gray-200">{selectedGive[i]}</span>
+                        </div>
+                      ))}
+                      {selectedGive.length !== selectedRecv.length && (
+                        <p className="text-[10px] text-orange-500 font-semibold pt-1">
+                          ⚠ {selectedGive.length} à donner · {selectedRecv.length} à recevoir — seules {pairCount} paire{pairCount > 1 ? 's' : ''} seront créées
+                        </p>
+                      )}
                     </div>
                     <button
                       onClick={proposeExchange}
-                      disabled={!selectedGive || !selectedRecv || proposing}
+                      disabled={pairCount === 0 || proposing}
                       className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-sm font-bold transition-colors"
                     >
-                      {proposing ? 'Envoi…' : !selectedGive || !selectedRecv ? 'Sélectionne une carte de chaque liste' : '📨 Proposer cet échange'}
+                      {proposing
+                        ? 'Envoi…'
+                        : pairCount === 0
+                          ? 'Sélectionne au moins une carte de chaque liste'
+                          : `📨 Proposer ${pairCount} échange${pairCount > 1 ? 's' : ''}`}
+                    </button>
+                    <button onClick={() => { setSelectedGive([]); setSelectedRecv([]); }}
+                      className="w-full py-1.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs font-medium transition-colors">
+                      Tout désélectionner
                     </button>
                   </div>
                 )}
@@ -439,7 +459,7 @@ function PlayerPill({ label, color }: { label: string; color: string }) {
 
 function ChipGroup({ label, flag, items, selected, onSelect, color }: {
   label: string; flag?: string; items: StickerItem[];
-  selected: string | null; onSelect: (id: string) => void; color: 'green' | 'orange';
+  selected: string[]; onSelect: (id: string) => void; color: 'green' | 'orange';
 }) {
   const base = color === 'green'
     ? 'border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20'
@@ -453,12 +473,21 @@ function ChipGroup({ label, flag, items, selected, onSelect, color }: {
         {flag && <span className="mr-1">{flag}</span>}{label}
       </p>
       <div className="flex flex-wrap gap-1">
-        {items.map((item) => (
-          <button key={item.id} title={item.name} onClick={() => onSelect(item.displayId)}
-            className={['text-xs font-bold rounded-lg px-2 py-0.5 border transition-all text-gray-700 dark:text-gray-200', selected === item.displayId ? sel : base].join(' ')}>
-            {item.displayId}
-          </button>
-        ))}
+        {items.map((item) => {
+          const idx = selected.indexOf(item.displayId);
+          const isSelected = idx !== -1;
+          return (
+            <button key={item.id} title={item.name} onClick={() => onSelect(item.displayId)}
+              className={['text-xs font-bold rounded-lg px-2 py-0.5 border transition-all text-gray-700 dark:text-gray-200 relative', isSelected ? sel : base].join(' ')}>
+              {item.displayId}
+              {isSelected && (
+                <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-blue-600 text-white text-[8px] font-black flex items-center justify-center leading-none">
+                  {idx + 1}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
