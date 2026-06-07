@@ -35,7 +35,7 @@ export function StatsView({ copies, packs, onPacksChange, spent, collected, coll
   [copies]);
 
   const sorted  = [...teamStats].sort((a, b) => b.pct - a.pct);
-  const top5    = sorted.slice(0, 5);
+  const top5    = sorted.filter((t) => t.pct < 100).slice(0, 5);
   const bottom5 = [...sorted].reverse().slice(0, 5);
 
   const completedTeams = teamStats.filter((t) => t.pct === 100);
