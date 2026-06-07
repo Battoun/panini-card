@@ -1,6 +1,6 @@
 'use client';
 
-import { TOTAL_STICKERS, TOTAL_BASE } from '../data/album';
+import { TOTAL_STICKERS, TOTAL_BASE, TOTAL_CC } from '../data/album';
 import { ThemeToggle } from './ThemeToggle';
 import { AuthButton } from './AuthButton';
 
@@ -12,8 +12,10 @@ interface Props {
 }
 
 export function StatsBar({ collected, collectedBase, doubles, totalDoubles }: Props) {
-  const pct     = Math.round((collectedBase / TOTAL_BASE) * 100);
-  const missing = TOTAL_STICKERS - collected;
+  const pct         = Math.round((collectedBase / TOTAL_BASE) * 100);
+  const collectedCC = collected - collectedBase;
+  const missingBase = TOTAL_BASE - collectedBase;
+  const missingCC   = TOTAL_CC  - collectedCC;
 
   return (
     <div className="w-full bg-linear-to-r from-blue-700 to-blue-900 text-white">
@@ -31,20 +33,18 @@ export function StatsBar({ collected, collectedBase, doubles, totalDoubles }: Pr
           </div>
         </div>
 
-        {/* Ligne 2 : stats en grille 4 colonnes */}
-        <div className="grid grid-cols-4 gap-1 mb-2">
-          <Stat label="Collées"       value={`${collected}/${TOTAL_STICKERS}`} color="text-green-300"  />
-          <Stat label="Manquantes"    value={String(missing)}                   color="text-red-300"   />
-          <Stat label="En double"     value={String(doubles)}                   color="text-orange-300"/>
-          <Stat label="Total doubles"  value={String(totalDoubles)}              color="text-yellow-300"/>
+        {/* Ligne 2 : stats — 5 colonnes */}
+        <div className="grid grid-cols-5 gap-1 mb-2">
+          <Stat label="Collées"      value={`${collected}/${TOTAL_STICKERS}`} color="text-green-300"  />
+          <Stat label="Manq. std"    value={String(missingBase)}               color="text-red-300"   />
+          <Stat label="Manq. CC"     value={String(missingCC)}                 color="text-pink-300"  />
+          <Stat label="En double"    value={String(doubles)}                   color="text-orange-300"/>
+          <Stat label="Total ×2"     value={String(totalDoubles)}              color="text-yellow-300"/>
         </div>
 
         {/* Ligne 3 : barre de progression */}
         <div className="h-1.5 bg-blue-900/60 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-green-400 rounded-full transition-all duration-300"
-            style={{ width: `${pct}%` }}
-          />
+          <div className="h-full bg-green-400 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
         </div>
         <p className="text-[10px] text-blue-200 mt-0.5">
           {pct}% standards — {collectedBase}/{TOTAL_BASE} · {collected}/{TOTAL_STICKERS} au total
@@ -58,8 +58,8 @@ export function StatsBar({ collected, collectedBase, doubles, totalDoubles }: Pr
 function Stat({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div className="text-center">
-      <p className={`text-sm font-black leading-none ${color}`}>{value}</p>
-      <p className="text-[9px] text-blue-200 uppercase tracking-wide mt-0.5 leading-none">{label}</p>
+      <p className={`text-xs font-black leading-none ${color}`}>{value}</p>
+      <p className="text-[8px] text-blue-200 uppercase tracking-wide mt-0.5 leading-none">{label}</p>
     </div>
   );
 }

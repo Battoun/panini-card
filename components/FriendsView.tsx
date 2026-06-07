@@ -124,8 +124,9 @@ export function FriendsView() {
     await createClient().from('friend_requests').update({ status: accept ? 'accepted' : 'rejected' }).eq('id', requestId);
     setActionLoading(null); loadData();
   };
-  const removeFriend = async (friendId: string) => {
+  const removeFriend = async (friendId: string, friendUsername: string) => {
     if (!user) return;
+    if (!window.confirm(`Retirer @${friendUsername} de tes amis ?\n\nVous ne pourrez plus voir vos collections respectives ni faire d'échanges.`)) return;
     setActionLoading(friendId);
     await createClient().from('friend_requests').delete()
       .or(`and(from_user_id.eq.${user.id},to_user_id.eq.${friendId}),and(from_user_id.eq.${friendId},to_user_id.eq.${user.id})`);
@@ -303,7 +304,7 @@ export function FriendsView() {
                       title="Voir les détails">
                       +
                     </button>
-                    <button onClick={() => removeFriend(f.id)} disabled={actionLoading === f.id}
+                    <button onClick={() => removeFriend(f.id, f.username)} disabled={actionLoading === f.id}
                       className="w-9 h-9 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-500 dark:hover:text-red-400 flex items-center justify-center transition-colors text-sm disabled:opacity-40"
                       title="Retirer">
                       ✕
