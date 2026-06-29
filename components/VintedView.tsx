@@ -11,10 +11,13 @@ interface VintedExchange {
   money: number; // positif = je reçois, négatif = je paye
   status: 'en_cours' | 'envoye' | 'recu' | 'termine';
   createdAt: number;
+  appliedToCollection?: boolean; // true une fois que le stock a été mis à jour
 }
 
 interface Props {
   copies: Record<number, number>;
+  onIncrement: (id: number) => void;
+  onDecrement: (id: number) => void;
 }
 
 const STORAGE_KEY = 'vinted_exchanges';
@@ -55,7 +58,7 @@ function parseCards(text: string): string[] {
     .filter(s => s.length > 0);
 }
 
-export function VintedView({ copies }: Props) {
+export function VintedView({ copies, onIncrement, onDecrement }: Props) {
   const [exchanges, setExchanges] = useState<VintedExchange[]>([]);
   const [showForm, setShowForm]   = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -173,7 +176,36 @@ export function VintedView({ copies }: Props) {
   };
 
   const handleStatusChange = (id: string, newStatus: VintedExchange['status']) => {
-    persist(exchanges.map(ex => ex.id === id ? { ...ex, status: newStatus } : ex));
+    const ex = exchanges.find(e => e.id === id);
+    if (!ex) return;
+
+    let applied = ex.appliedToCollection ?? false;
+
+    if (newStatus === 'termine' && !applied) {
+      // Appliquer au stock : retirer les données, ajouter les reçues
+      for (const card of ex.cardsGiven) {
+        const numId = displayIdMap[card];
+        if (numId) onDecrement(numId);
+      }
+      for (const card of ex.cardsReceived) {
+        const numId = displayIdMap[card];
+        if (numId) onIncrement(numId);
+      }
+      applied = true;
+    } else if (newStatus !== 'termine' && applied) {
+      // Annuler si on repasse en arrière
+      for (const card of ex.cardsGiven) {
+        const numId = displayIdMap[card];
+        if (numId) onIncrement(numId);
+      }
+      for (const card of ex.cardsReceived) {
+        const numId = displayIdMap[card];
+        if (numId) onDecrement(numId);
+      }
+      applied = false;
+    }
+
+    persist(exchanges.map(e => e.id === id ? { ...e, status: newStatus, appliedToCollection: applied } : e));
   };
 
   // Trier par date de création (premier arrivé = priorité 1)
