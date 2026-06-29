@@ -16,11 +16,12 @@ import { SharedDoublesPanel } from './SharedDoublesPanel';
 import { CompletionToast, ToastItem } from './CompletionToast';
 import { ComparePanel } from './ComparePanel';
 import { FriendsView } from './FriendsView';
+import { VintedView } from './VintedView';
 import { AuthModal } from './AuthModal';
 import { RareCardsSection } from './RareCardsSection';
 import { decodeDoubles } from '../utils/share';
 
-type Tab = 'album' | 'stats' | 'friends';
+type Tab = 'album' | 'stats' | 'friends' | 'vinted';
 
 export function AlbumView() {
   const { copies, hydrated, increment, decrement, setPacks, packs, importData, exportData, resetAll, stats, recordBatchExchange, recordExchange, undoExchange, setExchangeGiven, setExchangeReceived, exchangeGiven, exchangeReceived, exchangeHistory, saveNow, setRareCard, rareCards } = useCollection();
@@ -196,6 +197,18 @@ export function AlbumView() {
               Amis
             </button>
           )}
+          <button
+            onClick={() => setTab('vinted')}
+            className={[
+              'px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-1.5',
+              tab === 'vinted'
+                ? 'border-teal-500 text-teal-600 dark:text-teal-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
+            ].join(' ')}
+          >
+            <span className="w-5 h-5 bg-teal-500 rounded flex items-center justify-center text-white font-black text-xs leading-none">V</span>
+            Vinted
+          </button>
         </div>
       </div>
 
@@ -223,6 +236,8 @@ export function AlbumView() {
       )}
 
       {tab === 'friends' && user && <FriendsView />}
+
+      {tab === 'vinted' && <VintedView />}
 
       {tab === 'album' && <FilterBar
         filter={filter}
