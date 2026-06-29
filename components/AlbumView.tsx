@@ -200,13 +200,12 @@ export function AlbumView() {
           <button
             onClick={() => setTab('vinted')}
             className={[
-              'px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-1.5',
+              'px-5 py-3 text-sm font-semibold border-b-2 transition-colors',
               tab === 'vinted'
                 ? 'border-teal-500 text-teal-600 dark:text-teal-400'
                 : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
             ].join(' ')}
           >
-            <span className="w-5 h-5 bg-teal-500 rounded flex items-center justify-center text-white font-black text-xs leading-none">V</span>
             Vinted
           </button>
         </div>
