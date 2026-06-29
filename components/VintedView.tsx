@@ -95,15 +95,20 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
   };
 
   // Alertes résumées pour tout un échange
-  const exchangeAlerts = (ex: VintedExchange): { missing: string[]; overused: string[] } => {
+  const exchangeAlerts = (ex: VintedExchange): { missing: string[]; overused: string[]; alreadyOwned: string[] } => {
     const missing: string[] = [];
     const overused: string[] = [];
+    const alreadyOwned: string[] = [];
     for (const card of ex.cardsGiven) {
       const a = cardAlert(card, ex.id);
       if (a === 'missing') missing.push(card);
       else if (a === 'overused') overused.push(card);
     }
-    return { missing, overused };
+    for (const card of ex.cardsReceived) {
+      const numId = displayIdMap[card];
+      if (numId !== undefined && (copies[numId] ?? 0) >= 1) alreadyOwned.push(card);
+    }
+    return { missing, overused, alreadyOwned };
   };
 
   const resetForm = () => {
@@ -190,8 +195,8 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
 
   // Nombre d'échanges avec alertes
   const alertCount = active.filter(ex => {
-    const { missing, overused } = exchangeAlerts(ex);
-    return missing.length > 0 || overused.length > 0;
+    const { missing, overused, alreadyOwned } = exchangeAlerts(ex);
+    return missing.length > 0 || overused.length > 0 || alreadyOwned.length > 0;
   }).length;
 
   // Cartes données préviewées dans le form
@@ -390,6 +395,8 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
                 alerts={alerts}
                 usageMap={usageMap}
                 available={available}
+                displayIdMap={displayIdMap}
+                copies={copies}
                 onEdit={openEdit}
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}
@@ -414,9 +421,11 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
                 key={ex.id}
                 ex={ex}
                 priority={null}
-                alerts={{ missing: [], overused: [] }}
+                alerts={{ missing: [], overused: [], alreadyOwned: [] }}
                 usageMap={{}}
                 available={available}
+                displayIdMap={displayIdMap}
+                copies={copies}
                 onEdit={openEdit}
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}
@@ -435,20 +444,24 @@ function ExchangeCard({
   alerts,
   usageMap,
   available,
+  displayIdMap,
+  copies,
   onEdit,
   onDelete,
   onStatusChange,
 }: {
   ex: VintedExchange;
   priority: number | null;
-  alerts: { missing: string[]; overused: string[] };
+  alerts: { missing: string[]; overused: string[]; alreadyOwned: string[] };
   usageMap: Record<string, number>;
   available: (card: string) => number;
+  displayIdMap: Record<string, number>;
+  copies: Record<number, number>;
   onEdit: (ex: VintedExchange) => void;
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: VintedExchange['status']) => void;
 }) {
-  const hasAlert = alerts.missing.length > 0 || alerts.overused.length > 0;
+  const hasAlert = alerts.missing.length > 0 || alerts.overused.length > 0 || alerts.alreadyOwned.length > 0;
 
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-2xl border shadow-sm overflow-hidden ${
@@ -503,6 +516,11 @@ function ExchangeCard({
           {alerts.overused.length > 0 && (
             <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
               ⚠️ Utilisée dans plusieurs échanges, stock insuffisant : <span className="font-mono">{alerts.overused.join('  ')}</span>
+            </p>
+          )}
+          {alerts.alreadyOwned.length > 0 && (
+            <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+              ℹ️ Tu as déjà ces cartes : <span className="font-mono">{alerts.alreadyOwned.join('  ')}</span>
             </p>
           )}
         </div>
