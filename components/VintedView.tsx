@@ -1,26 +1,14 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ALL_STICKERS } from '../data/album';
-
-interface VintedExchange {
-  id: string;
-  username: string;
-  cardsGiven: string[];
-  cardsReceived: string[];
-  money: number; // positif = je reçois, négatif = je paye
-  status: 'en_cours' | 'envoye' | 'recu' | 'termine';
-  createdAt: number;
-  appliedToCollection?: boolean; // true une fois que le stock a été mis à jour
-}
+import { useVintedExchanges, VintedExchange } from '../hooks/useVintedExchanges';
 
 interface Props {
   copies: Record<number, number>;
   onIncrement: (id: number) => void;
   onDecrement: (id: number) => void;
 }
-
-const STORAGE_KEY = 'vinted_exchanges';
 
 const STATUS_LABELS: Record<VintedExchange['status'], string> = {
   en_cours: 'En cours',
@@ -59,7 +47,7 @@ function parseCards(text: string): string[] {
 }
 
 export function VintedView({ copies, onIncrement, onDecrement }: Props) {
-  const [exchanges, setExchanges] = useState<VintedExchange[]>([]);
+  const { exchanges, persist, hydrated } = useVintedExchanges();
   const [showForm, setShowForm]   = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -69,13 +57,6 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
   const [money,        setMoney]        = useState('');
   const [moneyDir,     setMoneyDir]     = useState<'receive' | 'pay'>('receive');
   const [status,       setStatus]       = useState<VintedExchange['status']>('en_cours');
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setExchanges(JSON.parse(stored));
-    } catch {}
-  }, []);
 
   // Map displayId normalisé → id numérique
   const displayIdMap = useMemo(() => {
@@ -123,11 +104,6 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
       else if (a === 'overused') overused.push(card);
     }
     return { missing, overused };
-  };
-
-  const persist = (updated: VintedExchange[]) => {
-    setExchanges(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   };
 
   const resetForm = () => {
@@ -224,6 +200,14 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
     const avail = available(c);
     return avail === 0;
   });
+
+  if (!hydrated) {
+    return (
+      <div className="flex items-center justify-center py-24 text-gray-400 text-sm">
+        Chargement des échanges…
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4 py-8">
