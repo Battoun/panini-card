@@ -236,7 +236,7 @@ export function AlbumView() {
 
       {tab === 'friends' && user && <FriendsView />}
 
-      {tab === 'vinted' && <VintedView />}
+      {tab === 'vinted' && <VintedView copies={copies} />}
 
       {tab === 'album' && <FilterBar
         filter={filter}

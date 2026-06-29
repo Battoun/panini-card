@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { ALL_STICKERS } from '../data/album';
 
 interface VintedExchange {
   id: string;
@@ -10,6 +11,10 @@ interface VintedExchange {
   money: number; // positif = je reçois, négatif = je paye
   status: 'en_cours' | 'envoye' | 'recu' | 'termine';
   createdAt: number;
+}
+
+interface Props {
+  copies: Record<number, number>;
 }
 
 const STORAGE_KEY = 'vinted_exchanges';
@@ -35,15 +40,22 @@ const STATUS_DOT: Record<VintedExchange['status'], string> = {
   termine:  'bg-emerald-400',
 };
 
+// "FRA4" ou "FRA 4" → "FRA 4" / "CC4" → "CC4" / "FWC4" → "FWC4"
+function normalizeId(raw: string): string {
+  const s = raw.toUpperCase().trim();
+  if (/^(CC\d+|FWC\d+|00)$/.test(s)) return s;
+  return s.replace(/^([A-Z]+)\s*(\d+)$/, '$1 $2');
+}
+
 function parseCards(text: string): string[] {
   if (!text.trim()) return [];
   return text
     .split(/[\s,;/\n]+/)
-    .map(s => s.toUpperCase().trim())
+    .map(s => normalizeId(s))
     .filter(s => s.length > 0);
 }
 
-export function VintedView() {
+export function VintedView({ copies }: Props) {
   const [exchanges, setExchanges] = useState<VintedExchange[]>([]);
   const [showForm, setShowForm]   = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -61,6 +73,54 @@ export function VintedView() {
       if (stored) setExchanges(JSON.parse(stored));
     } catch {}
   }, []);
+
+  // Map displayId normalisé → id numérique
+  const displayIdMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const s of ALL_STICKERS) map[s.displayId.toUpperCase()] = s.id;
+    return map;
+  }, []);
+
+  // Nombre de copies disponibles à donner pour un displayId
+  const available = (displayId: string): number => {
+    const numId = displayIdMap[displayId];
+    if (numId === undefined) return -1; // carte inconnue
+    return Math.max(0, (copies[numId] ?? 0) - 1);
+  };
+
+  // Combien de fois chaque carte est utilisée dans tous les échanges actifs
+  const usageMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const ex of exchanges.filter(e => e.status !== 'termine')) {
+      for (const card of ex.cardsGiven) {
+        map[card] = (map[card] ?? 0) + 1;
+      }
+    }
+    return map;
+  }, [exchanges]);
+
+  // Alertes pour une carte donnée (renvoie null si ok)
+  const cardAlert = (card: string, exId: string): 'missing' | 'overused' | null => {
+    const avail = available(card);
+    if (avail === -1) return null; // carte inconnue, on ne bloque pas
+    if (avail === 0) return 'missing';
+    // Combien en a-t-on besoin en tout ? L'échange courant + les autres
+    const totalNeeded = usageMap[card] ?? 1;
+    if (totalNeeded > avail) return 'overused';
+    return null;
+  };
+
+  // Alertes résumées pour tout un échange
+  const exchangeAlerts = (ex: VintedExchange): { missing: string[]; overused: string[] } => {
+    const missing: string[] = [];
+    const overused: string[] = [];
+    for (const card of ex.cardsGiven) {
+      const a = cardAlert(card, ex.id);
+      if (a === 'missing') missing.push(card);
+      else if (a === 'overused') overused.push(card);
+    }
+    return { missing, overused };
+  };
 
   const persist = (updated: VintedExchange[]) => {
     setExchanges(updated);
@@ -116,19 +176,36 @@ export function VintedView() {
     persist(exchanges.map(ex => ex.id === id ? { ...ex, status: newStatus } : ex));
   };
 
-  const active = exchanges.filter(e => e.status !== 'termine');
-  const done   = exchanges.filter(e => e.status === 'termine');
+  // Trier par date de création (premier arrivé = priorité 1)
+  const active = [...exchanges.filter(e => e.status !== 'termine')].sort((a, b) => a.createdAt - b.createdAt);
+  const done   = [...exchanges.filter(e => e.status === 'termine')].sort((a, b) => b.createdAt - a.createdAt);
+
+  // Nombre d'échanges avec alertes
+  const alertCount = active.filter(ex => {
+    const { missing, overused } = exchangeAlerts(ex);
+    return missing.length > 0 || overused.length > 0;
+  }).length;
+
+  // Cartes données préviewées dans le form
+  const givenPreview = parseCards(givenText);
+  const givenIssues  = givenPreview.filter(c => {
+    const avail = available(c);
+    return avail === 0;
+  });
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4 py-8">
 
-      {/* Header page */}
-      <div className="flex items-center justify-between mb-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2">
         <div>
           <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Échanges Vinted</h2>
           {exchanges.length > 0 && (
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
+            <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">
               {active.length} en cours · {done.length} terminé{done.length > 1 ? 's' : ''}
+              {alertCount > 0 && (
+                <span className="ml-2 text-orange-500 font-semibold">· ⚠️ {alertCount} alerte{alertCount > 1 ? 's' : ''}</span>
+              )}
             </p>
           )}
         </div>
@@ -141,6 +218,14 @@ export function VintedView() {
         </button>
       </div>
 
+      {/* Légende priorité */}
+      {active.length > 1 && (
+        <p className="text-xs text-gray-400 dark:text-gray-500 mb-6">
+          Les échanges sont classés par ordre d'arrivée — le n°1 est le plus prioritaire à honorer.
+        </p>
+      )}
+      {active.length <= 1 && <div className="mb-6" />}
+
       {/* Formulaire */}
       {showForm && (
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-md overflow-hidden mb-8">
@@ -151,11 +236,8 @@ export function VintedView() {
           </div>
 
           <div className="px-6 py-5 space-y-5">
-            {/* Pseudo */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                Pseudo Vinted
-              </label>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Pseudo Vinted</label>
               <input
                 type="text"
                 value={username}
@@ -165,12 +247,9 @@ export function VintedView() {
               />
             </div>
 
-            {/* Cartes données / reçues côte à côte */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-red-500 dark:text-red-400 mb-2">
-                  Cartes que je donne
-                </label>
+                <label className="block text-sm font-semibold text-red-500 dark:text-red-400 mb-2">Cartes que je donne</label>
                 <textarea
                   value={givenText}
                   onChange={e => setGivenText(e.target.value)}
@@ -178,14 +257,19 @@ export function VintedView() {
                   rows={4}
                   className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm bg-red-50/50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-300 font-mono resize-none placeholder:text-gray-300 dark:placeholder:text-gray-500"
                 />
-                {givenText && (
-                  <p className="text-xs text-gray-400 mt-1">{parseCards(givenText).length} carte{parseCards(givenText).length > 1 ? 's' : ''}</p>
-                )}
+                <div className="flex items-center justify-between mt-1">
+                  {givenPreview.length > 0 && (
+                    <p className="text-xs text-gray-400">{givenPreview.length} carte{givenPreview.length > 1 ? 's' : ''}</p>
+                  )}
+                  {givenIssues.length > 0 && (
+                    <p className="text-xs text-orange-500 font-semibold">
+                      ⚠️ {givenIssues.join(', ')} : pas en double
+                    </p>
+                  )}
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-emerald-600 dark:text-emerald-400 mb-2">
-                  Cartes que je reçois
-                </label>
+                <label className="block text-sm font-semibold text-emerald-600 dark:text-emerald-400 mb-2">Cartes que je reçois</label>
                 <textarea
                   value={receivedText}
                   onChange={e => setReceivedText(e.target.value)}
@@ -199,7 +283,6 @@ export function VintedView() {
               </div>
             </div>
 
-            {/* Argent + Statut sur la même ligne */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
@@ -228,7 +311,6 @@ export function VintedView() {
                   </div>
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Statut</label>
                 <select
@@ -279,18 +361,25 @@ export function VintedView() {
         </div>
       )}
 
-      {/* Échanges actifs */}
+      {/* Échanges actifs triés par priorité */}
       {active.length > 0 && (
         <div className="space-y-4 mb-8">
-          {active.map(ex => (
-            <ExchangeCard
-              key={ex.id}
-              ex={ex}
-              onEdit={openEdit}
-              onDelete={handleDelete}
-              onStatusChange={handleStatusChange}
-            />
-          ))}
+          {active.map((ex, idx) => {
+            const alerts = exchangeAlerts(ex);
+            return (
+              <ExchangeCard
+                key={ex.id}
+                ex={ex}
+                priority={idx + 1}
+                alerts={alerts}
+                usageMap={usageMap}
+                available={available}
+                onEdit={openEdit}
+                onDelete={handleDelete}
+                onStatusChange={handleStatusChange}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -308,6 +397,10 @@ export function VintedView() {
               <ExchangeCard
                 key={ex.id}
                 ex={ex}
+                priority={null}
+                alerts={{ missing: [], overused: [] }}
+                usageMap={{}}
+                available={available}
                 onEdit={openEdit}
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}
@@ -322,46 +415,82 @@ export function VintedView() {
 
 function ExchangeCard({
   ex,
+  priority,
+  alerts,
+  usageMap,
+  available,
   onEdit,
   onDelete,
   onStatusChange,
 }: {
   ex: VintedExchange;
+  priority: number | null;
+  alerts: { missing: string[]; overused: string[] };
+  usageMap: Record<string, number>;
+  available: (card: string) => number;
   onEdit: (ex: VintedExchange) => void;
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: VintedExchange['status']) => void;
 }) {
+  const hasAlert = alerts.missing.length > 0 || alerts.overused.length > 0;
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-      {/* Header de la carte */}
+    <div className={`bg-white dark:bg-gray-800 rounded-2xl border shadow-sm overflow-hidden ${
+      hasAlert ? 'border-orange-300 dark:border-orange-600' : 'border-gray-200 dark:border-gray-700'
+    }`}>
+      {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center shadow-sm shrink-0">
+          {/* Badge priorité */}
+          {priority !== null && (
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0 ${
+              priority === 1
+                ? 'bg-orange-500 text-white'
+                : priority === 2
+                  ? 'bg-gray-400 text-white'
+                  : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+            }`}>
+              {priority}
+            </div>
+          )}
+          <div className="w-9 h-9 bg-gradient-to-br from-teal-400 to-teal-600 rounded-full flex items-center justify-center shadow-sm shrink-0">
             <span className="text-white font-black text-base leading-none">V</span>
           </div>
           <div>
             <p className="font-bold text-gray-800 dark:text-gray-100">@{ex.username}</p>
             <p className="text-xs text-gray-400 dark:text-gray-500">
-              {ex.cardsGiven.length + ex.cardsReceived.length} cartes au total
+              {ex.cardsGiven.length} donnée{ex.cardsGiven.length > 1 ? 's' : ''} · {ex.cardsReceived.length} reçue{ex.cardsReceived.length > 1 ? 's' : ''}
             </p>
           </div>
         </div>
 
-        {/* Statut cliquable */}
-        <div className="relative">
-          <select
-            value={ex.status}
-            onChange={e => onStatusChange(ex.id, e.target.value as VintedExchange['status'])}
-            className={`appearance-none pl-7 pr-3 py-1.5 rounded-full text-xs font-bold border-0 cursor-pointer ${STATUS_COLORS[ex.status]}`}
-            style={{ backgroundImage: 'none' }}
-          >
-            {Object.entries(STATUS_LABELS).map(([k, v]) => (
-              <option key={k} value={k}>{v}</option>
-            ))}
-          </select>
-          <span className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full ${STATUS_DOT[ex.status]}`} />
-        </div>
+        <select
+          value={ex.status}
+          onChange={e => onStatusChange(ex.id, e.target.value as VintedExchange['status'])}
+          className={`appearance-none pl-6 pr-3 py-1.5 rounded-full text-xs font-bold border-0 cursor-pointer ${STATUS_COLORS[ex.status]}`}
+          style={{ backgroundImage: 'none' }}
+        >
+          {Object.entries(STATUS_LABELS).map(([k, v]) => (
+            <option key={k} value={k}>{v}</option>
+          ))}
+        </select>
       </div>
+
+      {/* Alertes */}
+      {hasAlert && (
+        <div className="px-5 py-3 bg-orange-50 dark:bg-orange-900/20 border-b border-orange-100 dark:border-orange-800 space-y-1">
+          {alerts.missing.length > 0 && (
+            <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
+              ⚠️ Tu n'as pas ces doubles : <span className="font-mono">{alerts.missing.join('  ')}</span>
+            </p>
+          )}
+          {alerts.overused.length > 0 && (
+            <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
+              ⚠️ Utilisée dans plusieurs échanges, stock insuffisant : <span className="font-mono">{alerts.overused.join('  ')}</span>
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Corps : cartes */}
       <div className="grid grid-cols-2 divide-x divide-gray-100 dark:divide-gray-700">
@@ -370,9 +499,25 @@ function ExchangeCard({
             Je donne · {ex.cardsGiven.length}
           </p>
           {ex.cardsGiven.length > 0 ? (
-            <p className="text-sm text-gray-700 dark:text-gray-300 font-mono leading-relaxed break-all">
-              {ex.cardsGiven.join('  ')}
-            </p>
+            <div className="flex flex-wrap gap-1">
+              {ex.cardsGiven.map((card, i) => {
+                const avail = available(card);
+                const totalUsed = usageMap[card] ?? 1;
+                const isProblematic = avail === 0 || (avail > 0 && totalUsed > avail);
+                return (
+                  <span
+                    key={i}
+                    className={`text-xs font-mono px-1.5 py-0.5 rounded ${
+                      isProblematic
+                        ? 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300 font-bold'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {card}
+                  </span>
+                );
+              })}
+            </div>
           ) : (
             <p className="text-sm text-gray-300 dark:text-gray-600 italic">Aucune</p>
           )}
@@ -382,47 +527,33 @@ function ExchangeCard({
             Je reçois · {ex.cardsReceived.length}
           </p>
           {ex.cardsReceived.length > 0 ? (
-            <p className="text-sm text-gray-700 dark:text-gray-300 font-mono leading-relaxed break-all">
-              {ex.cardsReceived.join('  ')}
-            </p>
+            <div className="flex flex-wrap gap-1">
+              {ex.cardsReceived.map((card, i) => (
+                <span key={i} className="text-xs font-mono px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                  {card}
+                </span>
+              ))}
+            </div>
           ) : (
             <p className="text-sm text-gray-300 dark:text-gray-600 italic">Aucune</p>
           )}
         </div>
       </div>
 
-      {/* Footer : argent + actions */}
+      {/* Footer */}
       <div className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-100 dark:border-gray-700">
         <div>
           {ex.money !== 0 ? (
-            <span className={`inline-flex items-center gap-1.5 text-sm font-bold ${
-              ex.money > 0
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-red-500 dark:text-red-400'
-            }`}>
-              {ex.money > 0 ? '💸' : '💳'}
-              {ex.money > 0
-                ? `+${ex.money.toFixed(2)} € à recevoir`
-                : `−${Math.abs(ex.money).toFixed(2)} € à payer`
-              }
+            <span className={`text-sm font-bold ${ex.money > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+              {ex.money > 0 ? `💸 +${ex.money.toFixed(2)} € à recevoir` : `💳 −${Math.abs(ex.money).toFixed(2)} € à payer`}
             </span>
           ) : (
             <span className="text-xs text-gray-400 dark:text-gray-500">Échange sans argent</span>
           )}
         </div>
         <div className="flex gap-4">
-          <button
-            onClick={() => onEdit(ex)}
-            className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Modifier
-          </button>
-          <button
-            onClick={() => onDelete(ex.id)}
-            className="text-sm font-semibold text-red-500 dark:text-red-400 hover:underline"
-          >
-            Supprimer
-          </button>
+          <button onClick={() => onEdit(ex)} className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline">Modifier</button>
+          <button onClick={() => onDelete(ex.id)} className="text-sm font-semibold text-red-500 dark:text-red-400 hover:underline">Supprimer</button>
         </div>
       </div>
     </div>
