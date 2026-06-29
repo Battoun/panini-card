@@ -31,19 +31,23 @@ const STATUS_DOT: Record<VintedExchange['status'], string> = {
   termine:  'bg-emerald-400',
 };
 
-// "FRA4" ou "FRA 4" → "FRA 4" / "CC4" → "CC4" / "FWC4" → "FWC4"
-function normalizeId(raw: string): string {
-  const s = raw.toUpperCase().trim();
-  if (/^(CC\d+|FWC\d+|00)$/.test(s)) return s;
-  return s.replace(/^([A-Z]+)\s*(\d+)$/, '$1 $2');
+// Stockage compact sans espace : "KOR3", "FWC7", "CC4"
+function compactId(raw: string): string {
+  return raw.toUpperCase().replace(/\s+/g, '').trim();
 }
 
 function parseCards(text: string): string[] {
   if (!text.trim()) return [];
   return text
     .split(/[\s,;/\n]+/)
-    .map(s => normalizeId(s))
+    .map(s => compactId(s))
     .filter(s => s.length > 0);
+}
+
+// Compact → displayId de l'album : "KOR3" → "KOR 3", "CC4" → "CC4"
+function toDisplayId(compact: string): string {
+  if (/^(CC\d+|FWC\d+|00)$/.test(compact)) return compact;
+  return compact.replace(/^([A-Z]+)(\d+)$/, '$1 $2');
 }
 
 export function VintedView({ copies, onIncrement, onDecrement }: Props) {
@@ -58,16 +62,20 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
   const [moneyDir,     setMoneyDir]     = useState<'receive' | 'pay'>('receive');
   const [status,       setStatus]       = useState<VintedExchange['status']>('en_cours');
 
-  // Map displayId normalisé → id numérique
+  // Map compact + spaced → id numérique (supporte "KOR3" et "KOR 3")
   const displayIdMap = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const s of ALL_STICKERS) map[s.displayId.toUpperCase()] = s.id;
+    for (const s of ALL_STICKERS) {
+      const upper = s.displayId.toUpperCase();
+      map[upper] = s.id;
+      map[upper.replace(/\s+/g, '')] = s.id; // version compact aussi
+    }
     return map;
   }, []);
 
-  // Nombre de copies disponibles à donner pour un displayId
-  const available = (displayId: string): number => {
-    const numId = displayIdMap[displayId];
+  // Nombre de copies disponibles à donner pour un id compact
+  const available = (card: string): number => {
+    const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
     if (numId === undefined) return -1; // carte inconnue
     return Math.max(0, (copies[numId] ?? 0) - 1);
   };
@@ -105,7 +113,7 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
       else if (a === 'overused') overused.push(card);
     }
     for (const card of ex.cardsReceived) {
-      const numId = displayIdMap[card];
+      const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
       if (numId !== undefined && (copies[numId] ?? 0) >= 1) alreadyOwned.push(card);
     }
     return { missing, overused, alreadyOwned };
@@ -119,8 +127,8 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
 
   const openEdit = (ex: VintedExchange) => {
     setUsername(ex.username);
-    setGivenText(ex.cardsGiven.join(' '));
-    setReceivedText(ex.cardsReceived.join(' '));
+    setGivenText(ex.cardsGiven.map(compactId).join(' '));
+    setReceivedText(ex.cardsReceived.map(compactId).join(' '));
     const abs = Math.abs(ex.money);
     setMoney(abs === 0 ? '' : String(abs));
     setMoneyDir(ex.money >= 0 ? 'receive' : 'pay');
@@ -165,22 +173,22 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
     if (newStatus === 'termine' && !applied) {
       // Appliquer au stock : retirer les données, ajouter les reçues
       for (const card of ex.cardsGiven) {
-        const numId = displayIdMap[card];
+        const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
         if (numId) onDecrement(numId);
       }
       for (const card of ex.cardsReceived) {
-        const numId = displayIdMap[card];
+        const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
         if (numId) onIncrement(numId);
       }
       applied = true;
     } else if (newStatus !== 'termine' && applied) {
       // Annuler si on repasse en arrière
       for (const card of ex.cardsGiven) {
-        const numId = displayIdMap[card];
+        const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
         if (numId) onIncrement(numId);
       }
       for (const card of ex.cardsReceived) {
-        const numId = displayIdMap[card];
+        const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
         if (numId) onDecrement(numId);
       }
       applied = false;
