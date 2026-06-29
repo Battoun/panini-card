@@ -489,6 +489,14 @@ function ExchangeCard({
             <p className="font-bold text-gray-800 dark:text-gray-100">@{ex.username}</p>
             <p className="text-xs text-gray-400 dark:text-gray-500">
               {ex.cardsGiven.length} donnée{ex.cardsGiven.length > 1 ? 's' : ''} · {ex.cardsReceived.length} reçue{ex.cardsReceived.length > 1 ? 's' : ''}
+              {ex.cardsGiven.length !== ex.cardsReceived.length && (() => {
+                const diff = ex.cardsReceived.length - ex.cardsGiven.length;
+                return (
+                  <span className={`ml-1.5 font-semibold ${diff > 0 ? 'text-emerald-500' : 'text-orange-400'}`}>
+                    ({diff > 0 ? `+${diff}` : diff} pour toi)
+                  </span>
+                );
+              })()}
             </p>
           </div>
         </div>
