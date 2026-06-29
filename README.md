@@ -28,11 +28,21 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 - **Échanges effectués** — compteurs cartes données / reçues, modifiables manuellement
 - **Historique des échanges** — 20 derniers échanges avec bouton Annuler (remet les cartes en place)
 
-### Échanges
+### Échanges (comparaison)
 - **Mode comparaison** — colle le JSON d'un ami pour voir ce qu'il peut te donner et ce que tu peux lui donner
 - Sélection manuelle ou **aléatoire** de la paire de cartes à échanger
 - Validation : vérifie que tu as bien un double à donner et que tu n'as pas encore la carte à recevoir
 - **Historique persisté** — les 5 derniers échanges dans la comparaison, annulables
+
+### Échanges Vinted
+- **Suivi des échanges en cours** sur Vinted — plusieurs échanges simultanés
+- Saisie du pseudo Vinted, des cartes données et reçues, et d'un éventuel montant en euros
+- **Ordre de priorité** — les échanges sont classés par date d'arrivée (premier arrivé = n°1, le plus urgent)
+- **Statuts** : En cours / Envoyé / Reçu / Terminé
+- **Alertes automatiques** :
+  - Carte promise que tu n'as pas en double
+  - Même carte utilisée dans plusieurs échanges avec un stock insuffisant
+- **Mise à jour automatique du stock** quand un échange passe en "Terminé" — les cartes données sont décrémentées, les cartes reçues incrémentées. Annulable en repassant le statut en arrière.
 
 ### Compte & synchronisation
 - **Inscription** avec email, mot de passe et pseudo (unique, visible par les amis)
