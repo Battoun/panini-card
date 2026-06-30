@@ -13,6 +13,8 @@ export interface VintedExchange {
   status: 'en_cours' | 'envoye' | 'recu' | 'termine';
   createdAt: number;
   sortOrder?: number; // ordre manuel, défaut = createdAt
+  shippingMethod?: 'vinted' | 'manuel';
+  shippingAddress?: string;
   appliedToCollection?: boolean;
 }
 

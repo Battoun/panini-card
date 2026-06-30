@@ -48,12 +48,14 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
   const [showForm, setShowForm]   = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const [username,     setUsername]     = useState('');
-  const [givenText,    setGivenText]    = useState('');
-  const [receivedText, setReceivedText] = useState('');
-  const [money,        setMoney]        = useState('');
-  const [moneyDir,     setMoneyDir]     = useState<'receive' | 'pay'>('receive');
-  const [status,       setStatus]       = useState<VintedExchange['status']>('en_cours');
+  const [username,        setUsername]        = useState('');
+  const [givenText,       setGivenText]       = useState('');
+  const [receivedText,    setReceivedText]    = useState('');
+  const [money,           setMoney]           = useState('');
+  const [moneyDir,        setMoneyDir]        = useState<'receive' | 'pay'>('receive');
+  const [status,          setStatus]          = useState<VintedExchange['status']>('en_cours');
+  const [shippingMethod,  setShippingMethod]  = useState<'vinted' | 'manuel'>('vinted');
+  const [shippingAddress, setShippingAddress] = useState('');
 
   // Map compact + spaced → id numérique
   const displayIdMap = useMemo(() => {
@@ -129,6 +131,7 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
   const resetForm = () => {
     setUsername(''); setGivenText(''); setReceivedText('');
     setMoney(''); setMoneyDir('receive'); setStatus('en_cours');
+    setShippingMethod('vinted'); setShippingAddress('');
     setEditingId(null); setShowForm(false);
   };
 
@@ -140,6 +143,8 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
     setMoney(abs === 0 ? '' : String(abs));
     setMoneyDir(ex.money >= 0 ? 'receive' : 'pay');
     setStatus(ex.status);
+    setShippingMethod(ex.shippingMethod ?? 'vinted');
+    setShippingAddress(ex.shippingAddress ?? '');
     setEditingId(ex.id);
     setShowForm(true);
   };
@@ -148,9 +153,14 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
     if (!username.trim()) return;
     const moneyVal = money ? (parseFloat(money) || 0) * (moneyDir === 'pay' ? -1 : 1) : 0;
 
+    const shipping = {
+      shippingMethod,
+      shippingAddress: shippingMethod === 'manuel' ? shippingAddress.trim() : '',
+    };
+
     if (editingId) {
       persist(exchanges.map(ex => ex.id === editingId
-        ? { ...ex, username: username.trim(), cardsGiven: parseCards(givenText), cardsReceived: parseCards(receivedText), money: moneyVal, status }
+        ? { ...ex, username: username.trim(), cardsGiven: parseCards(givenText), cardsReceived: parseCards(receivedText), money: moneyVal, status, ...shipping }
         : ex
       ));
     } else {
@@ -164,6 +174,7 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
         status,
         createdAt: now,
         sortOrder: now,
+        ...shipping,
       }]);
     }
     resetForm();
@@ -374,6 +385,44 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
                   ))}
                 </select>
               </div>
+            </div>
+
+            {/* Mode d'envoi */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Mode d&apos;envoi</label>
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setShippingMethod('vinted')}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
+                    shippingMethod === 'vinted'
+                      ? 'bg-teal-500 text-white border-teal-500'
+                      : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-teal-300'
+                  }`}
+                >
+                  📦 Envoi Vinted
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShippingMethod('manuel')}
+                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors ${
+                    shippingMethod === 'manuel'
+                      ? 'bg-teal-500 text-white border-teal-500'
+                      : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:border-teal-300'
+                  }`}
+                >
+                  ✉️ Par mes soins
+                </button>
+              </div>
+              {shippingMethod === 'manuel' && (
+                <textarea
+                  value={shippingAddress}
+                  onChange={e => setShippingAddress(e.target.value)}
+                  placeholder={"Prénom Nom\n12 rue de la Paix\n75001 Paris"}
+                  rows={3}
+                  className="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-400 resize-none placeholder:text-gray-300 dark:placeholder:text-gray-500"
+                />
+              )}
             </div>
           </div>
 
@@ -684,6 +733,22 @@ function ExchangeCard({
           )}
         </div>
       )}
+
+      {/* Envoi */}
+      <div className="px-5 py-3 border-t border-gray-100 dark:border-gray-700 flex items-start gap-3">
+        {ex.shippingMethod === 'manuel' ? (
+          <>
+            <span className="shrink-0 text-sm font-semibold text-amber-600 dark:text-amber-400 whitespace-nowrap">✉️ Par mes soins</span>
+            {ex.shippingAddress ? (
+              <span className="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed">{ex.shippingAddress}</span>
+            ) : (
+              <span className="text-xs text-gray-400 italic">Adresse non renseignée</span>
+            )}
+          </>
+        ) : (
+          <span className="text-sm font-semibold text-teal-600 dark:text-teal-400">📦 Envoi via Vinted</span>
+        )}
+      </div>
 
       {/* Footer */}
       <div className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-100 dark:border-gray-700">
