@@ -10,7 +10,7 @@ export interface VintedExchange {
   cardsGiven: string[];
   cardsReceived: string[];
   money: number; // positif = je reçois, négatif = je paye
-  status: 'en_cours' | 'envoye' | 'recu' | 'termine';
+  status: 'validation' | 'preparation' | 'envoye' | 'recu' | 'termine';
   createdAt: number;
   sortOrder?: number; // ordre manuel, défaut = createdAt
   shippingMethod?: 'vinted' | 'manuel';

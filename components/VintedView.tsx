@@ -11,17 +11,19 @@ interface Props {
 }
 
 const STATUS_LABELS: Record<VintedExchange['status'], string> = {
-  en_cours: 'En cours',
-  envoye:   'Envoyé',
-  recu:     'Reçu',
-  termine:  'Terminé ✓',
+  validation:  'En cours de validation',
+  preparation: 'En préparation',
+  envoye:      'Envoyé',
+  recu:        'Reçu',
+  termine:     'Terminé ✓',
 };
 
 const STATUS_COLORS: Record<VintedExchange['status'], string> = {
-  en_cours: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-  envoye:   'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-  recu:     'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
-  termine:  'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  validation:  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
+  preparation: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
+  envoye:      'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  recu:        'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+  termine:     'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
 };
 
 // Stockage compact sans espace : "KOR3", "FWC7", "CC4"
@@ -53,7 +55,7 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
   const [receivedText,    setReceivedText]    = useState('');
   const [money,           setMoney]           = useState('');
   const [moneyDir,        setMoneyDir]        = useState<'receive' | 'pay'>('receive');
-  const [status,          setStatus]          = useState<VintedExchange['status']>('en_cours');
+  const [status,          setStatus]          = useState<VintedExchange['status']>('validation');
   const [shippingMethod,  setShippingMethod]  = useState<'vinted' | 'manuel'>('vinted');
   const [shippingAddress, setShippingAddress] = useState('');
 
@@ -130,7 +132,7 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
 
   const resetForm = () => {
     setUsername(''); setGivenText(''); setReceivedText('');
-    setMoney(''); setMoneyDir('receive'); setStatus('en_cours');
+    setMoney(''); setMoneyDir('receive'); setStatus('validation');
     setShippingMethod('vinted'); setShippingAddress('');
     setEditingId(null); setShowForm(false);
   };
@@ -142,7 +144,9 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
     const abs = Math.abs(ex.money);
     setMoney(abs === 0 ? '' : String(abs));
     setMoneyDir(ex.money >= 0 ? 'receive' : 'pay');
-    setStatus(ex.status);
+    // Migration : 'en_cours' → 'validation' pour les anciens échanges
+    const migratedStatus = (ex.status as string) === 'en_cours' ? 'validation' : ex.status;
+    setStatus(migratedStatus as VintedExchange['status']);
     setShippingMethod(ex.shippingMethod ?? 'vinted');
     setShippingAddress(ex.shippingAddress ?? '');
     setEditingId(ex.id);
