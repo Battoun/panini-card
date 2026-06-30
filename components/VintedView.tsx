@@ -24,13 +24,6 @@ const STATUS_COLORS: Record<VintedExchange['status'], string> = {
   termine:  'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
 };
 
-const STATUS_DOT: Record<VintedExchange['status'], string> = {
-  en_cours: 'bg-amber-400',
-  envoye:   'bg-blue-400',
-  recu:     'bg-violet-400',
-  termine:  'bg-emerald-400',
-};
-
 // Stockage compact sans espace : "KOR3", "FWC7", "CC4"
 function compactId(raw: string): string {
   return raw.toUpperCase().replace(/\s+/g, '').trim();
@@ -62,25 +55,24 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
   const [moneyDir,     setMoneyDir]     = useState<'receive' | 'pay'>('receive');
   const [status,       setStatus]       = useState<VintedExchange['status']>('en_cours');
 
-  // Map compact + spaced → id numérique (supporte "KOR3" et "KOR 3")
+  // Map compact + spaced → id numérique
   const displayIdMap = useMemo(() => {
     const map: Record<string, number> = {};
     for (const s of ALL_STICKERS) {
       const upper = s.displayId.toUpperCase();
       map[upper] = s.id;
-      map[upper.replace(/\s+/g, '')] = s.id; // version compact aussi
+      map[upper.replace(/\s+/g, '')] = s.id;
     }
     return map;
   }, []);
 
-  // Nombre de copies disponibles à donner pour un id compact
   const available = (card: string): number => {
     const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
-    if (numId === undefined) return -1; // carte inconnue
+    if (numId === undefined) return -1;
     return Math.max(0, (copies[numId] ?? 0) - 1);
   };
 
-  // Combien de fois chaque carte est utilisée dans tous les échanges actifs
+  // Combien de fois chaque carte donnée est utilisée dans les échanges actifs
   const usageMap = useMemo(() => {
     const map: Record<string, number> = {};
     for (const ex of exchanges.filter(e => e.status !== 'termine')) {
@@ -91,32 +83,47 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
     return map;
   }, [exchanges]);
 
-  // Alertes pour une carte donnée (renvoie null si ok)
-  const cardAlert = (card: string, exId: string): 'missing' | 'overused' | null => {
+  // Combien d'échanges actifs reçoivent chaque carte (détecte les conflits)
+  const receivedConflictMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const ex of exchanges.filter(e => e.status !== 'termine')) {
+      for (const card of ex.cardsReceived) {
+        map[card] = (map[card] ?? 0) + 1;
+      }
+    }
+    return map;
+  }, [exchanges]);
+
+  const cardAlert = (card: string): 'missing' | 'overused' | null => {
     const avail = available(card);
-    if (avail === -1) return null; // carte inconnue, on ne bloque pas
+    if (avail === -1) return null;
     if (avail === 0) return 'missing';
-    // Combien en a-t-on besoin en tout ? L'échange courant + les autres
     const totalNeeded = usageMap[card] ?? 1;
     if (totalNeeded > avail) return 'overused';
     return null;
   };
 
-  // Alertes résumées pour tout un échange
-  const exchangeAlerts = (ex: VintedExchange): { missing: string[]; overused: string[]; alreadyOwned: string[] } => {
+  const exchangeAlerts = (ex: VintedExchange): {
+    missing: string[];
+    overused: string[];
+    alreadyOwned: string[];
+    receivedConflict: string[];
+  } => {
     const missing: string[] = [];
     const overused: string[] = [];
     const alreadyOwned: string[] = [];
+    const receivedConflict: string[] = [];
     for (const card of ex.cardsGiven) {
-      const a = cardAlert(card, ex.id);
+      const a = cardAlert(card);
       if (a === 'missing') missing.push(card);
       else if (a === 'overused') overused.push(card);
     }
     for (const card of ex.cardsReceived) {
       const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
       if (numId !== undefined && (copies[numId] ?? 0) >= 1) alreadyOwned.push(card);
+      if ((receivedConflictMap[card] ?? 0) > 1) receivedConflict.push(card);
     }
-    return { missing, overused, alreadyOwned };
+    return { missing, overused, alreadyOwned, receivedConflict };
   };
 
   const resetForm = () => {
@@ -147,14 +154,16 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
         : ex
       ));
     } else {
+      const now = Date.now();
       persist([...exchanges, {
-        id: Date.now().toString(),
+        id: now.toString(),
         username: username.trim(),
         cardsGiven: parseCards(givenText),
         cardsReceived: parseCards(receivedText),
         money: moneyVal,
         status,
-        createdAt: Date.now(),
+        createdAt: now,
+        sortOrder: now,
       }]);
     }
     resetForm();
@@ -171,7 +180,6 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
     let applied = ex.appliedToCollection ?? false;
 
     if (newStatus === 'termine' && !applied) {
-      // Appliquer au stock : retirer les données, ajouter les reçues
       for (const card of ex.cardsGiven) {
         const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
         if (numId) onDecrement(numId);
@@ -182,7 +190,6 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
       }
       applied = true;
     } else if (newStatus !== 'termine' && applied) {
-      // Annuler si on repasse en arrière
       for (const card of ex.cardsGiven) {
         const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
         if (numId) onIncrement(numId);
@@ -197,22 +204,38 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
     persist(exchanges.map(e => e.id === id ? { ...e, status: newStatus, appliedToCollection: applied } : e));
   };
 
-  // Trier par date de création (premier arrivé = priorité 1)
-  const active = [...exchanges.filter(e => e.status !== 'termine')].sort((a, b) => a.createdAt - b.createdAt);
-  const done   = [...exchanges.filter(e => e.status === 'termine')].sort((a, b) => b.createdAt - a.createdAt);
+  // Déplacer un échange dans la liste (swap sortOrder avec le voisin)
+  const handleMove = (id: string, dir: 'up' | 'down') => {
+    const sorted = [...active];
+    const idx = sorted.findIndex(e => e.id === id);
+    const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= sorted.length) return;
 
-  // Nombre d'échanges avec alertes
+    const a = sorted[idx];
+    const b = sorted[swapIdx];
+    const aOrder = a.sortOrder ?? a.createdAt;
+    const bOrder = b.sortOrder ?? b.createdAt;
+
+    persist(exchanges.map(e => {
+      if (e.id === a.id) return { ...e, sortOrder: bOrder };
+      if (e.id === b.id) return { ...e, sortOrder: aOrder };
+      return e;
+    }));
+  };
+
+  // Trier par sortOrder (ou createdAt si pas encore défini)
+  const active = [...exchanges.filter(e => e.status !== 'termine')]
+    .sort((a, b) => (a.sortOrder ?? a.createdAt) - (b.sortOrder ?? b.createdAt));
+  const done = [...exchanges.filter(e => e.status === 'termine')]
+    .sort((a, b) => b.createdAt - a.createdAt);
+
   const alertCount = active.filter(ex => {
-    const { missing, overused, alreadyOwned } = exchangeAlerts(ex);
-    return missing.length > 0 || overused.length > 0 || alreadyOwned.length > 0;
+    const { missing, overused, alreadyOwned, receivedConflict } = exchangeAlerts(ex);
+    return missing.length > 0 || overused.length > 0 || alreadyOwned.length > 0 || receivedConflict.length > 0;
   }).length;
 
-  // Cartes données préviewées dans le form
   const givenPreview = parseCards(givenText);
-  const givenIssues  = givenPreview.filter(c => {
-    const avail = available(c);
-    return avail === 0;
-  });
+  const givenIssues  = givenPreview.filter(c => available(c) === 0);
 
   if (!hydrated) {
     return (
@@ -247,10 +270,9 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
         </button>
       </div>
 
-      {/* Légende priorité */}
       {active.length > 1 && (
         <p className="text-xs text-gray-400 dark:text-gray-500 mb-6">
-          Les échanges sont classés par ordre d'arrivée — le n°1 est le plus prioritaire à honorer.
+          Priorité manuelle — utilise ▲▼ pour réordonner. Le n°1 est le plus urgent.
         </p>
       )}
       {active.length <= 1 && <div className="mb-6" />}
@@ -390,7 +412,7 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
         </div>
       )}
 
-      {/* Échanges actifs triés par priorité */}
+      {/* Échanges actifs */}
       {active.length > 0 && (
         <div className="space-y-4 mb-8">
           {active.map((ex, idx) => {
@@ -402,12 +424,16 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
                 priority={idx + 1}
                 alerts={alerts}
                 usageMap={usageMap}
+                receivedConflictMap={receivedConflictMap}
                 available={available}
                 displayIdMap={displayIdMap}
                 copies={copies}
+                isFirst={idx === 0}
+                isLast={idx === active.length - 1}
                 onEdit={openEdit}
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}
+                onMove={handleMove}
               />
             );
           })}
@@ -429,14 +455,18 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
                 key={ex.id}
                 ex={ex}
                 priority={null}
-                alerts={{ missing: [], overused: [], alreadyOwned: [] }}
+                alerts={{ missing: [], overused: [], alreadyOwned: [], receivedConflict: [] }}
                 usageMap={{}}
+                receivedConflictMap={{}}
                 available={available}
                 displayIdMap={displayIdMap}
                 copies={copies}
+                isFirst={false}
+                isLast={false}
                 onEdit={openEdit}
                 onDelete={handleDelete}
                 onStatusChange={handleStatusChange}
+                onMove={() => {}}
               />
             ))}
           </div>
@@ -451,25 +481,33 @@ function ExchangeCard({
   priority,
   alerts,
   usageMap,
+  receivedConflictMap,
   available,
   displayIdMap,
   copies,
+  isFirst,
+  isLast,
   onEdit,
   onDelete,
   onStatusChange,
+  onMove,
 }: {
   ex: VintedExchange;
   priority: number | null;
-  alerts: { missing: string[]; overused: string[]; alreadyOwned: string[] };
+  alerts: { missing: string[]; overused: string[]; alreadyOwned: string[]; receivedConflict: string[] };
   usageMap: Record<string, number>;
+  receivedConflictMap: Record<string, number>;
   available: (card: string) => number;
   displayIdMap: Record<string, number>;
   copies: Record<number, number>;
+  isFirst: boolean;
+  isLast: boolean;
   onEdit: (ex: VintedExchange) => void;
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: VintedExchange['status']) => void;
+  onMove: (id: string, dir: 'up' | 'down') => void;
 }) {
-  const hasAlert = alerts.missing.length > 0 || alerts.overused.length > 0 || alerts.alreadyOwned.length > 0;
+  const hasAlert = alerts.missing.length > 0 || alerts.overused.length > 0 || alerts.alreadyOwned.length > 0 || alerts.receivedConflict.length > 0;
 
   return (
     <div className={`bg-white dark:bg-gray-800 rounded-2xl border shadow-sm overflow-hidden ${
@@ -478,7 +516,27 @@ function ExchangeCard({
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center gap-3">
-          {/* Badge priorité */}
+          {/* Flèches de réordonnancement + badge numéro */}
+          {priority !== null && (
+            <div className="flex flex-col gap-0.5 shrink-0">
+              <button
+                onClick={() => onMove(ex.id, 'up')}
+                disabled={isFirst}
+                title="Monter"
+                className="w-6 h-5 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-[10px]"
+              >
+                ▲
+              </button>
+              <button
+                onClick={() => onMove(ex.id, 'down')}
+                disabled={isLast}
+                title="Descendre"
+                className="w-6 h-5 flex items-center justify-center rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-[10px]"
+              >
+                ▼
+              </button>
+            </div>
+          )}
           {priority !== null && (
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0 ${
               priority === 1
@@ -526,17 +584,22 @@ function ExchangeCard({
         <div className="px-5 py-3 bg-orange-50 dark:bg-orange-900/20 border-b border-orange-100 dark:border-orange-800 space-y-1">
           {alerts.missing.length > 0 && (
             <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
-              ⚠️ Tu n'as pas ces doubles : <span className="font-mono">{alerts.missing.join('  ')}</span>
+              ⚠️ Tu n&apos;as pas ces doubles : <span className="font-mono">{alerts.missing.join('  ')}</span>
             </p>
           )}
           {alerts.overused.length > 0 && (
             <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">
-              ⚠️ Utilisée dans plusieurs échanges, stock insuffisant : <span className="font-mono">{alerts.overused.join('  ')}</span>
+              ⚠️ Stock insuffisant sur plusieurs échanges : <span className="font-mono">{alerts.overused.join('  ')}</span>
             </p>
           )}
           {alerts.alreadyOwned.length > 0 && (
             <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">
               ℹ️ Tu as déjà ces cartes : <span className="font-mono">{alerts.alreadyOwned.join('  ')}</span>
+            </p>
+          )}
+          {alerts.receivedConflict.length > 0 && (
+            <p className="text-xs font-semibold text-violet-600 dark:text-violet-400">
+              ⚠️ Reçue dans un autre échange aussi : <span className="font-mono">{alerts.receivedConflict.join('  ')}</span>
             </p>
           )}
         </div>
@@ -578,17 +641,49 @@ function ExchangeCard({
           </p>
           {ex.cardsReceived.length > 0 ? (
             <div className="flex flex-wrap gap-1">
-              {ex.cardsReceived.map((card, i) => (
-                <span key={i} className="text-xs font-mono px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                  {card}
-                </span>
-              ))}
+              {ex.cardsReceived.map((card, i) => {
+                const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
+                const owned    = numId !== undefined && (copies[numId] ?? 0) >= 1;
+                const conflict = (receivedConflictMap[card] ?? 0) > 1;
+                return (
+                  <span
+                    key={i}
+                    className={`text-xs font-mono px-1.5 py-0.5 rounded ${
+                      owned
+                        ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-bold'
+                        : conflict
+                          ? 'bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 font-bold'
+                          : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
+                    }`}
+                  >
+                    {card}
+                  </span>
+                );
+              })}
             </div>
           ) : (
             <p className="text-sm text-gray-300 dark:text-gray-600 italic">Aucune</p>
           )}
         </div>
       </div>
+
+      {/* Légende cartes reçues si alertes */}
+      {(alerts.alreadyOwned.length > 0 || alerts.receivedConflict.length > 0) && (
+        <div className="flex gap-4 px-5 pb-3 text-xs text-gray-400">
+          {alerts.alreadyOwned.length > 0 && (
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-sm bg-blue-300 dark:bg-blue-700 inline-block" />
+              Déjà possédée
+            </span>
+          )}
+          {alerts.receivedConflict.length > 0 && (
+            <span className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-sm bg-violet-300 dark:bg-violet-700 inline-block" />
+              Doublon entre échanges
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Footer */}
       <div className="flex items-center justify-between px-5 py-3 bg-gray-50 dark:bg-gray-800/60 border-t border-gray-100 dark:border-gray-700">

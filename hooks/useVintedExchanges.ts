@@ -12,6 +12,7 @@ export interface VintedExchange {
   money: number; // positif = je reçois, négatif = je paye
   status: 'en_cours' | 'envoye' | 'recu' | 'termine';
   createdAt: number;
+  sortOrder?: number; // ordre manuel, défaut = createdAt
   appliedToCollection?: boolean;
 }
 
