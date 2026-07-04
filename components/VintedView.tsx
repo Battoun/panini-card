@@ -14,7 +14,8 @@ const STATUS_LABELS: Record<VintedExchange['status'], string> = {
   validation:  'En cours de validation',
   preparation: 'En préparation',
   envoye:      'Envoyé',
-  recu:        'Reçu',
+  recu_lui:    'Reçu par lui',
+  recu_moi:    'Reçu par moi',
   termine:     'Terminé ✓',
 };
 
@@ -22,7 +23,8 @@ const STATUS_COLORS: Record<VintedExchange['status'], string> = {
   validation:  'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300',
   preparation: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
   envoye:      'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-  recu:        'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+  recu_lui:    'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
+  recu_moi:    'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
   termine:     'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
 };
 
@@ -145,7 +147,8 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
     setMoney(abs === 0 ? '' : String(abs));
     setMoneyDir(ex.money >= 0 ? 'receive' : 'pay');
     // Migration : 'en_cours' → 'validation' pour les anciens échanges
-    const migratedStatus = (ex.status as string) === 'en_cours' ? 'validation' : ex.status;
+    const s = ex.status as string;
+    const migratedStatus = s === 'en_cours' ? 'validation' : s === 'recu' ? 'recu_moi' : ex.status;
     setStatus(migratedStatus as VintedExchange['status']);
     setShippingMethod(ex.shippingMethod ?? 'vinted');
     setShippingAddress(ex.shippingAddress ?? '');
