@@ -252,6 +252,13 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
     return missing.length > 0 || overused.length > 0 || alreadyOwned.length > 0 || receivedConflict.length > 0;
   }).length;
 
+  // Stats dashboard
+  const totalGiven       = active.reduce((s, ex) => s + ex.cardsGiven.length, 0);
+  const totalReceived    = active.reduce((s, ex) => s + ex.cardsReceived.length, 0);
+  const moneyBalance     = active.reduce((s, ex) => s + ex.money, 0);
+  const doneGiven        = done.reduce((s, ex) => s + ex.cardsGiven.length, 0);
+  const doneReceived     = done.reduce((s, ex) => s + ex.cardsReceived.length, 0);
+
   const givenPreview = parseCards(givenText);
   const givenIssues  = givenPreview.filter(c => available(c) === 0);
 
@@ -288,12 +295,65 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
         </button>
       </div>
 
+      {/* Dashboard stats */}
+      {exchanges.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+          {/* Échanges actifs */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-3">
+            <p className="text-2xl font-black text-gray-800 dark:text-gray-100">{active.length}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">en cours</p>
+            {alertCount > 0 && (
+              <p className="text-xs text-orange-500 font-semibold mt-1">⚠️ {alertCount} alerte{alertCount > 1 ? 's' : ''}</p>
+            )}
+          </div>
+
+          {/* Échanges terminés */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-3">
+            <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{done.length}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">terminé{done.length > 1 ? 's' : ''}</p>
+            {done.length > 0 && (
+              <p className="text-xs text-gray-400 mt-1">+{doneReceived} reçues · -{doneGiven} données</p>
+            )}
+          </div>
+
+          {/* Cartes en jeu */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-3">
+            <div className="flex items-baseline gap-1.5">
+              <p className="text-2xl font-black text-red-500 dark:text-red-400">-{totalGiven}</p>
+              {totalReceived > 0 && (
+                <p className="text-lg font-black text-emerald-500 dark:text-emerald-400">+{totalReceived}</p>
+              )}
+            </div>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">cartes actives</p>
+            {totalGiven !== totalReceived && totalGiven > 0 && totalReceived > 0 && (
+              <p className={`text-xs font-semibold mt-1 ${totalReceived - totalGiven > 0 ? 'text-emerald-500' : 'text-orange-400'}`}>
+                net {totalReceived - totalGiven > 0 ? '+' : ''}{totalReceived - totalGiven}
+              </p>
+            )}
+          </div>
+
+          {/* Argent */}
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-3">
+            <p className={`text-2xl font-black ${
+              moneyBalance > 0 ? 'text-emerald-600 dark:text-emerald-400'
+              : moneyBalance < 0 ? 'text-red-500 dark:text-red-400'
+              : 'text-gray-400'
+            }`}>
+              {moneyBalance === 0 ? '—' : `${moneyBalance > 0 ? '+' : ''}${moneyBalance.toFixed(0)}€`}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              {moneyBalance > 0 ? 'à recevoir' : moneyBalance < 0 ? 'à payer' : 'sans argent'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {active.length > 1 && (
-        <p className="text-xs text-gray-400 dark:text-gray-500 mb-6">
+        <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
           Priorité manuelle — utilise ▲▼ pour réordonner. Le n°1 est le plus urgent.
         </p>
       )}
-      {active.length <= 1 && <div className="mb-6" />}
+      {active.length <= 1 && <div className="mb-2" />}
 
       {/* Formulaire */}
       {showForm && (
