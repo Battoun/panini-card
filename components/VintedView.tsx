@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { ALL_STICKERS } from '../data/album';
 import { useVintedExchanges, VintedExchange } from '../hooks/useVintedExchanges';
 
@@ -8,6 +8,7 @@ interface Props {
   copies: Record<number, number>;
   onIncrement: (id: number) => void;
   onDecrement: (id: number) => void;
+  onSaveCollection?: () => Promise<boolean>;
 }
 
 const STATUS_LABELS: Record<VintedExchange['status'], string> = {
@@ -47,8 +48,13 @@ function toDisplayId(compact: string): string {
   return compact.replace(/^([A-Z]+)(\d+)$/, '$1 $2');
 }
 
-export function VintedView({ copies, onIncrement, onDecrement }: Props) {
+export function VintedView({ copies, onIncrement, onDecrement, onSaveCollection }: Props) {
   const { exchanges, persist, hydrated } = useVintedExchanges();
+
+  // Stable ref so setTimeout callbacks always call the latest saveNow (post-render)
+  const saveCollectionRef = useRef(onSaveCollection);
+  useEffect(() => { saveCollectionRef.current = onSaveCollection; }, [onSaveCollection]);
+
   const [showForm, setShowForm]   = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -166,10 +172,44 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
     };
 
     if (editingId) {
+      const existing = exchanges.find(e => e.id === editingId);
+      let applied = existing?.appliedToCollection ?? false;
+      let collectionChanged = false;
+
+      if (status === 'termine' && !applied) {
+        // Status changed to done — decrement given cards, increment received cards
+        for (const card of parseCards(givenText)) {
+          const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
+          if (numId !== undefined) onDecrement(numId);
+        }
+        for (const card of parseCards(receivedText)) {
+          const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
+          if (numId !== undefined) onIncrement(numId);
+        }
+        applied = true;
+        collectionChanged = true;
+      } else if (status !== 'termine' && applied) {
+        // Status reverted from done — undo using the previously saved card lists
+        for (const card of (existing?.cardsGiven ?? [])) {
+          const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
+          if (numId !== undefined) onIncrement(numId);
+        }
+        for (const card of (existing?.cardsReceived ?? [])) {
+          const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
+          if (numId !== undefined) onDecrement(numId);
+        }
+        applied = false;
+        collectionChanged = true;
+      }
+
       persist(exchanges.map(ex => ex.id === editingId
-        ? { ...ex, username: username.trim(), cardsGiven: parseCards(givenText), cardsReceived: parseCards(receivedText), money: moneyVal, status, ...shipping }
+        ? { ...ex, username: username.trim(), cardsGiven: parseCards(givenText), cardsReceived: parseCards(receivedText), money: moneyVal, status, appliedToCollection: applied, ...shipping }
         : ex
       ));
+
+      if (collectionChanged) {
+        setTimeout(() => { saveCollectionRef.current?.(); }, 100);
+      }
     } else {
       const now = Date.now();
       persist([...exchanges, {
@@ -196,30 +236,38 @@ export function VintedView({ copies, onIncrement, onDecrement }: Props) {
     if (!ex) return;
 
     let applied = ex.appliedToCollection ?? false;
+    let collectionChanged = false;
 
     if (newStatus === 'termine' && !applied) {
       for (const card of ex.cardsGiven) {
         const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
-        if (numId) onDecrement(numId);
+        if (numId !== undefined) onDecrement(numId);
       }
       for (const card of ex.cardsReceived) {
         const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
-        if (numId) onIncrement(numId);
+        if (numId !== undefined) onIncrement(numId);
       }
       applied = true;
+      collectionChanged = true;
     } else if (newStatus !== 'termine' && applied) {
       for (const card of ex.cardsGiven) {
         const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
-        if (numId) onIncrement(numId);
+        if (numId !== undefined) onIncrement(numId);
       }
       for (const card of ex.cardsReceived) {
         const numId = displayIdMap[card] ?? displayIdMap[toDisplayId(card)];
-        if (numId) onDecrement(numId);
+        if (numId !== undefined) onDecrement(numId);
       }
       applied = false;
+      collectionChanged = true;
     }
 
     persist(exchanges.map(e => e.id === id ? { ...e, status: newStatus, appliedToCollection: applied } : e));
+
+    // Force-save collection after React commits the updated state
+    if (collectionChanged) {
+      setTimeout(() => { saveCollectionRef.current?.(); }, 100);
+    }
   };
 
   // Déplacer un échange dans la liste (swap sortOrder avec le voisin)
