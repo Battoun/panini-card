@@ -28,8 +28,17 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // Refresh session if expired
-  await supabase.auth.getUser();
+  // Refresh session if expired — timeout protection for Vercel Edge (1.5s limit)
+  try {
+    await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('supabase-timeout')), 1000)
+      ),
+    ]);
+  } catch {
+    // Timeout ou erreur Supabase — on continue sans rafraîchir la session
+  }
 
   return supabaseResponse;
 }
