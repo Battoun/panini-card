@@ -7,8 +7,20 @@ import { createClient } from '../lib/supabase/client';
 
 const PACK_PRICE       = 1.5;
 const SAVE_DEBOUNCE_MS = 800;
+const LS_CACHE_KEY     = 'collection_cache';
 
 const EMPTY: CollectionData = { copies: {}, packs: 0, lastUpdated: '' };
+
+function readCache(): CollectionData | null {
+  try {
+    const s = localStorage.getItem(LS_CACHE_KEY);
+    return s ? JSON.parse(s) as CollectionData : null;
+  } catch { return null; }
+}
+
+function writeCache(d: CollectionData) {
+  try { localStorage.setItem(LS_CACHE_KEY, JSON.stringify(d)); } catch {}
+}
 
 async function loadFromSupabase(userId: string): Promise<CollectionData | null> {
   const supabase = createClient();
@@ -46,8 +58,15 @@ async function saveToSupabase(userId: string, collection: CollectionData) {
 
 export function useCollection() {
   const { user, loading: authLoading } = useAuth();
-  const [data, setData]         = useState<CollectionData>(EMPTY);
-  const [hydrated, setHydrated] = useState(false);
+  // Hydratation instantanée depuis le cache localStorage (2e visite+)
+  const [data, setData] = useState<CollectionData>(() => {
+    if (typeof window === 'undefined') return EMPTY;
+    return readCache() ?? EMPTY;
+  });
+  const [hydrated, setHydrated] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !!localStorage.getItem(LS_CACHE_KEY);
+  });
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const saveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,17 +76,21 @@ export function useCollection() {
   useEffect(() => {
     if (authLoading) return;
 
-    setHydrated(false);
-
     if (!user) {
+      // Non connecté : on vide (pas de données personnelles à afficher)
       setData(EMPTY);
       setHydrated(true);
       return;
     }
 
+    // Connecté : on rafraîchit depuis Supabase en arrière-plan
+    // (le cache localStorage a déjà hydraté l'UI instantanément)
     loadFromSupabase(user.id).then((loaded) => {
-      justLoaded.current = true;
-      setData(loaded ?? EMPTY);
+      if (loaded !== null) {
+        justLoaded.current = true;
+        setData(loaded);
+        writeCache(loaded); // mise à jour du cache avec les données fraîches
+      }
       setHydrated(true);
     });
   }, [user?.id, authLoading]);
@@ -81,6 +104,9 @@ export function useCollection() {
       justLoaded.current = false;
       return;
     }
+
+    // Écriture immédiate dans localStorage (next visit sera instantanée)
+    writeCache(data);
 
     if (saveTimer.current) clearTimeout(saveTimer.current);
     setSyncStatus('saving');

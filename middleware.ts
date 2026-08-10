@@ -7,6 +7,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  // Skip Supabase call if no auth cookie — no session to refresh
+  const hasSbCookie = request.cookies.getAll().some(c => c.name.startsWith('sb-'));
+  if (!hasSbCookie) {
+    return NextResponse.next({ request });
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
