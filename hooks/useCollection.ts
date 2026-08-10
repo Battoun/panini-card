@@ -23,75 +23,57 @@ function writeCache(d: CollectionData) {
 }
 
 async function loadFromSupabase(userId: string): Promise<CollectionData | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('collections')
-    .select('copies, packs')
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (error) { console.error('[loadFromSupabase]', error); return null; }
-  if (!data) return null;
-  const raw = data.copies;
-  if (!raw || typeof raw !== 'object') return null;
-  // If full CollectionData is stored (has nested 'copies' key)
-  if ('copies' in (raw as object)) {
-    const cd = raw as CollectionData;
-    return { ...EMPTY, ...cd, packs: cd.packs ?? data.packs ?? 0 };
+  try {
+    const supabase = createClient();
+    const result = await Promise.race([
+      supabase.from('collections').select('copies, packs').eq('user_id', userId).maybeSingle(),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000)),
+    ]);
+    const { data, error } = result;
+    if (error) { console.error('[loadFromSupabase]', error); return null; }
+    if (!data) return null;
+    const raw = data.copies;
+    if (!raw || typeof raw !== 'object') return null;
+    if ('copies' in (raw as object)) {
+      const cd = raw as CollectionData;
+      return { ...EMPTY, ...cd, packs: cd.packs ?? data.packs ?? 0 };
+    }
+    return { ...EMPTY, copies: raw as Record<number, number>, packs: data.packs ?? 0 };
+  } catch (e) {
+    console.error('[loadFromSupabase] timeout or error:', e);
+    return null;
   }
-  // Legacy format: only copies map stored
-  return { ...EMPTY, copies: raw as Record<number, number>, packs: data.packs ?? 0 };
 }
 
-async function saveToSupabase(userId: string, collection: CollectionData) {
-  const supabase = createClient();
-  const { error } = await supabase.from('collections').upsert(
-    {
-      user_id: userId,
-      copies: collection,   // full CollectionData stored in the jsonb column
-      packs:  collection.packs,
-      last_updated: new Date().toISOString(),
-    },
-    { onConflict: 'user_id' },
-  );
-  if (error) console.error('[saveToSupabase]', error);
-}
 
 export function useCollection() {
   const { user, loading: authLoading } = useAuth();
-  // Hydratation instantanée depuis le cache localStorage (2e visite+)
+  // Hydratation instantanée depuis le cache localStorage (évite l'écran de chargement)
   const [data, setData] = useState<CollectionData>(() => {
     if (typeof window === 'undefined') return EMPTY;
     return readCache() ?? EMPTY;
   });
-  const [hydrated, setHydrated] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return !!localStorage.getItem(LS_CACHE_KEY);
-  });
+  const [hydrated, setHydrated] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const saveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
   const justLoaded = useRef(false);
 
-  // Load / reset when auth changes
+  // Hydrate immédiatement au montage côté client — l'UI ne bloque jamais
   useEffect(() => {
-    if (authLoading) return;
+    setHydrated(true);
+  }, []);
 
-    if (!user) {
-      // Non connecté : on vide (pas de données personnelles à afficher)
-      setData(EMPTY);
-      setHydrated(true);
-      return;
-    }
+  // Sync depuis Supabase quand l'auth change
+  useEffect(() => {
+    if (authLoading || !user) return;
 
-    // Connecté : on rafraîchit depuis Supabase en arrière-plan
-    // (le cache localStorage a déjà hydraté l'UI instantanément)
     loadFromSupabase(user.id).then((loaded) => {
       if (loaded !== null) {
         justLoaded.current = true;
         setData(loaded);
-        writeCache(loaded); // mise à jour du cache avec les données fraîches
+        writeCache(loaded);
       }
-      setHydrated(true);
     });
   }, [user?.id, authLoading]);
 

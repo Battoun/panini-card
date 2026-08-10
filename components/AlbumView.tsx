@@ -149,10 +149,10 @@ export function AlbumView() {
   const activeFilter = search ? 'all' : filter === 'almost' ? 'missing' : filter;
   const isEmpty = filteredSpecial.length === 0 && filteredCC.length === 0 && searchFilteredTeams.length === 0;
 
-  if (!hydrated) {
+  if (authLoading) {
     return (
       <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-        {authLoading || user ? 'Chargement de ta collection…' : ''}
+        Connexion…
       </div>
     );
   }
