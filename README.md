@@ -44,19 +44,9 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
   - Même carte utilisée dans plusieurs échanges avec un stock insuffisant
 - **Mise à jour automatique du stock** quand un échange passe en "Terminé" — les cartes données sont décrémentées, les cartes reçues incrémentées. Annulable en repassant le statut en arrière.
 
-### Compte & synchronisation
-- **Inscription** avec email, mot de passe et pseudo (unique, visible par les amis)
-- **Connexion** sécurisée via Supabase Auth
-- **Collection synchronisée dans le cloud** — retrouve exactement la même collection sur tous tes appareils en te connectant
-- **Sauvegarde manuelle** — bouton dans Exporter / Partager → Sauvegarder pour forcer la mise en base
-- **Page de profil** — pseudo, email, date d'inscription, déconnexion
-
-### Amis
-- **Recherche d'amis** par pseudo
-- **Demandes d'amis** — envoi, acceptation, refus, annulation
-- **Progression de ses amis** — barre de complétion colorée visible sur la carte de chaque ami
-- **Détail d'un ami** — modal avec % global, équipes complètes, top 5 équipes, nombre de doubles
-- **Échanges disponibles** — onglet dédié dans le modal : cartes que l'ami peut te donner (ses doubles que tu n'as pas) et cartes que tu peux lui donner (tes doubles qu'il n'a pas), calculé en temps réel depuis vos deux collections cloud
+### Stockage
+- **100 % local** — la collection et les échanges Vinted sont enregistrés dans le navigateur (`localStorage`), sans compte ni serveur
+- Pour changer d'appareil : Exporter / Partager → Télécharger le fichier JSON, puis Importer sur l'autre appareil
 
 ### Export / Import
 - Export de la liste des doubles (texte lisible)
@@ -79,8 +69,7 @@ Application web pour suivre sa collection de vignettes Panini FIFA World Cup 202
 
 - [Next.js](https://nextjs.org) (App Router) + TypeScript
 - [Tailwind CSS](https://tailwindcss.com) v4
-- [Supabase](https://supabase.com) — Auth + base de données PostgreSQL (collection cloud, profils, amis)
-- Persistance locale via `localStorage` (cache) + synchronisation cloud
+- Persistance locale via `localStorage`
 
 ## Lancer en local
 
@@ -90,12 +79,3 @@ npm run dev
 ```
 
 Ouvre [http://localhost:3000](http://localhost:3000) dans ton navigateur.
-
-### Variables d'environnement requises
-
-Crée un fichier `.env.local` à la racine :
-
-```
-NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-```

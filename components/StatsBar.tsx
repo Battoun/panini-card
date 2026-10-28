@@ -2,7 +2,6 @@
 
 import { TOTAL_STICKERS, TOTAL_BASE, TOTAL_CC } from '../data/album';
 import { ThemeToggle } from './ThemeToggle';
-import { AuthButton } from './AuthButton';
 
 interface Props {
   collected: number;
@@ -29,7 +28,6 @@ export function StatsBar({ collected, collectedBase, doubles, totalDoubles }: Pr
           </div>
           <div className="flex items-center gap-2 shrink-0 ml-3">
             <ThemeToggle />
-            <AuthButton />
           </div>
         </div>
 

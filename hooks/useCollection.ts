@@ -2,11 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CollectionData, ExchangeHistoryItem, RareRarity } from '../types';
-import { useAuth } from './useAuth';
-import { createClient } from '../lib/supabase/client';
 
 const PACK_PRICE       = 1.5;
-const SAVE_DEBOUNCE_MS = 800;
 const LS_CACHE_KEY     = 'collection_cache';
 
 const EMPTY: CollectionData = { copies: {}, packs: 0, lastUpdated: '' };
@@ -22,116 +19,33 @@ function writeCache(d: CollectionData) {
   try { localStorage.setItem(LS_CACHE_KEY, JSON.stringify(d)); } catch {}
 }
 
-async function loadFromSupabase(userId: string): Promise<CollectionData | null> {
-  try {
-    const supabase = createClient();
-    const result = await Promise.race([
-      supabase.from('collections').select('copies, packs').eq('user_id', userId).maybeSingle(),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000)),
-    ]);
-    const { data, error } = result;
-    if (error) { console.error('[loadFromSupabase]', error); return null; }
-    if (!data) return null;
-    const raw = data.copies;
-    if (!raw || typeof raw !== 'object') return null;
-    if ('copies' in (raw as object)) {
-      const cd = raw as CollectionData;
-      return { ...EMPTY, ...cd, packs: cd.packs ?? data.packs ?? 0 };
-    }
-    return { ...EMPTY, copies: raw as Record<number, number>, packs: data.packs ?? 0 };
-  } catch (e) {
-    console.error('[loadFromSupabase] timeout or error:', e);
-    return null;
-  }
-}
-
-
 export function useCollection() {
-  const { user, loading: authLoading } = useAuth();
-  // Hydratation instantanée depuis le cache localStorage (évite l'écran de chargement)
+  // Hydratation instantanée depuis localStorage (seul stockage de la collection)
   const [data, setData] = useState<CollectionData>(() => {
     if (typeof window === 'undefined') return EMPTY;
     return readCache() ?? EMPTY;
   });
   const [hydrated, setHydrated] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
-  const saveTimer  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const justLoaded = useRef(false);
+  const skipNextSave = useRef(true);
 
-  // Hydrate immédiatement au montage côté client — l'UI ne bloque jamais
   useEffect(() => {
     setHydrated(true);
   }, []);
 
-  // Sync depuis Supabase quand l'auth change
+  // Sauvegarde locale à chaque changement
   useEffect(() => {
-    if (authLoading || !user) return;
-
-    loadFromSupabase(user.id).then((loaded) => {
-      if (loaded !== null) {
-        justLoaded.current = true;
-        setData(loaded);
-        writeCache(loaded);
-      }
-    });
-  }, [user?.id, authLoading]);
-
-  // Debounced save on every data change
-  useEffect(() => {
-    if (!user || !hydrated) return;
-
-    // Skip the very first trigger caused by the initial load
-    if (justLoaded.current) {
-      justLoaded.current = false;
+    if (skipNextSave.current) {
+      skipNextSave.current = false;
       return;
     }
-
-    // Écriture immédiate dans localStorage (next visit sera instantanée)
     writeCache(data);
-
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    setSyncStatus('saving');
-    saveTimer.current = setTimeout(async () => {
-      const { error } = await (async () => {
-        const supabase = createClient();
-        const payload = {
-          user_id:    user.id,
-          copies:     data,          // CollectionData complet : copies + packs + échanges + historique
-          packs:      data.packs,
-          last_updated: new Date().toISOString(),
-        };
-        return supabase.from('collections').upsert(payload, { onConflict: 'user_id' });
-      })();
-      setSyncStatus(error ? 'error' : 'saved');
-      if (error) console.error('[autoSave]', error);
-      setTimeout(() => setSyncStatus('idle'), 3000);
-    }, SAVE_DEBOUNCE_MS);
-
-    return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
-  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const saveNow = useCallback(async (): Promise<boolean> => {
-    if (!user) return false;
-    setSyncStatus('saving');
-    const supabase = createClient();
-    const payload = {
-      user_id:      user.id,
-      copies:       data,          // CollectionData complet : copies + packs + échanges + historique
-      packs:        data.packs,
-      last_updated: new Date().toISOString(),
-    };
-    const { error } = await supabase.from('collections').upsert(payload, { onConflict: 'user_id' });
-    if (error) {
-      console.error('[saveNow]', error);
-      setSyncStatus('error');
-      setTimeout(() => setSyncStatus('idle'), 3000);
-      return false;
-    }
-    setSyncStatus('saved');
-    setTimeout(() => setSyncStatus('idle'), 3000);
+    writeCache(data);
     return true;
-  }, [user, data]);
+  }, [data]);
 
   // ── Mutations ──────────────────────────────────────────────
 
@@ -266,13 +180,6 @@ export function useCollection() {
 
   const exportData = useCallback((): string => JSON.stringify(data, null, 2), [data]);
 
-  const refresh = useCallback(async () => {
-    if (!user) return;
-    const loaded = await loadFromSupabase(user.id);
-    justLoaded.current = true;
-    setData(loaded ?? EMPTY);
-  }, [user]);
-
   const resetAll = useCallback(() => {
     setData({ ...EMPTY, lastUpdated: new Date().toISOString() });
   }, []);
@@ -305,8 +212,6 @@ export function useCollection() {
     setExchangeGiven,
     setExchangeReceived,
     saveNow,
-    syncStatus,
-    refresh,
     setRareCard,
     importData,
     exportData,
